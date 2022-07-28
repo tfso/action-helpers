@@ -20,6 +20,9 @@ inputs:
   INITIAL_VERSION:
     description: initial version, nice if migrating from other build platforms
     required: false
+  CUSTOM_TAG:
+    description: Set a custom tag, useful when generating tag based on f.ex FROM image in a docker image. Setting this tag will invalidate any other settings set!
+    required: false
   NODE_VERSION: 
     description: node version, defaults to 14
     required: false
@@ -40,7 +43,7 @@ inputs:
 outputs:
   version: 
     description: the full version including 'v', will be prereleased if build is a branch
-    value: ${{ steps.semver.outputs.new_tag }}
+    value: ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }}
   prerelease: 
     description: prerelease suffix for PR builds and will truncate branchname to first word ('feature/my-feature' will be 'feature') unless TRUNCATE_PRERELEASE is set to `false`
     value: ${{ steps.branch.outputs.prerelease }}
@@ -131,6 +134,7 @@ runs:
         npm prune --production
 
     - name: create version
+      if: inputs.CUSTOM_TAG == ''
       id: semver
       uses: anothrNick/github-tag-action@1.36.0
       env:
@@ -140,8 +144,18 @@ runs:
         PRERELEASE_SUFFIX: ${{ steps.branch.outputs.prerelease }}
         WITH_V: true
         DRY_RUN: true
+
+    - shell: bash
+      name: fix custom version/tag
+      if: inputs.CUSTOM_TAG
+      id: custom
+      run: |
+        echo "::set-output name=new_tag::$(echo $CUSTOM_TAG | sed 's/v\?\(.*\)/\1/g')"
+        echo $CUSTOM_TAG | sed 's/v\?\(.*\)/\1/g'
+      env:
+        CUSTOM_TAG: ${{ inputs.CUSTOM_TAG }}
         
     - shell: bash
       name: version package
       run: |
-        npm version ${{ steps.semver.outputs.new_tag }} --no-git-tag-version --ignore-scripts
+        npm version ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }} --no-git-tag-version --ignore-scripts
