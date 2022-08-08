@@ -112,27 +112,6 @@ runs:
       env: 
         NPM_TOKEN: ${{ inputs.FONT_AWESOME_TOKEN }}
 
-    - shell: bash
-      name: install
-      run: |
-        npm ci
-
-    - shell: bash
-      name: build
-      run: |
-        npm run build
-
-    - shell: bash
-      name: tests
-      run: |
-        npm test
-
-    - shell: bash
-      name: clean up
-      if: inputs.PRUNE_PRODUCTION == 'true'
-      run: |
-        npm prune --production
-
     - name: create version
       if: inputs.CUSTOM_TAG == ''
       id: semver
@@ -154,8 +133,29 @@ runs:
         echo $CUSTOM_TAG | sed 's/v\?\(.*\)/\1/g'
       env:
         CUSTOM_TAG: ${{ inputs.CUSTOM_TAG }}
-        
+
     - shell: bash
       name: version package
       run: |
         npm version ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }} --no-git-tag-version --ignore-scripts
+    
+    - shell: bash
+      name: install
+      run: |
+        npm ci
+
+    - shell: bash
+      name: build
+      run: |
+        npm run build
+
+    - shell: bash
+      name: tests
+      run: |
+        npm test
+
+    - shell: bash
+      name: clean up
+      if: inputs.PRUNE_PRODUCTION == 'true'
+      run: |
+        npm prune --production
