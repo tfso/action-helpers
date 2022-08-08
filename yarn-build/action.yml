@@ -107,27 +107,6 @@ runs:
       env: 
         NPM_TOKEN: ${{ inputs.FONT_AWESOME_TOKEN }}
 
-    - shell: bash
-      name: install
-      run: |
-        yarn install --frozen-lockfile
-
-    - shell: bash
-      name: build
-      run: |
-        yarn run build
-
-    - shell: bash
-      name: tests
-      run: |
-        yarn test
-
-    - shell: bash
-      name: clean up
-      if: inputs.PRUNE_PRODUCTION == 'true'
-      run: |
-        yarn install --production
-
     - name: create version
       if: inputs.CUSTOM_TAG == ''
       id: semver
@@ -154,3 +133,24 @@ runs:
       name: version package
       run: |
         yarn version --new-version ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }} --no-git-tag-version --no-commit-hooks
+
+    - shell: bash
+      name: install
+      run: |
+        yarn install --frozen-lockfile
+
+    - shell: bash
+      name: build
+      run: |
+        yarn run build
+
+    - shell: bash
+      name: tests
+      run: |
+        yarn test
+
+    - shell: bash
+      name: clean up
+      if: inputs.PRUNE_PRODUCTION == 'true'
+      run: |
+        yarn install --production
