@@ -1,0 +1,157 @@
+name: 'Get version'
+description: ''
+
+inputs:
+  GITHUB_TOKEN:
+    description: 'Github Token'
+    required: false
+  DEFAULT_BUMP:
+    description: ''
+    required: false
+    default: 'patch'
+  MAJOR: 
+    description: Limit versioning within a major version
+    required: false
+  INITIAL_VERSION:
+    description: Initial version if there isn't any tags
+    required: false
+    default: 0.0.0
+  WITH_V:
+    description: Tag version with v character.
+    required: false
+    default: 'false'
+  TRUNCATE_PRERELEASE:
+    description: Truncate prerelease suffix for PR builds where the branchname will be truncated to the first word ('feature/my-feature' will be 'feature')
+    required: false
+    default: 'false'
+  PRERELEASE_SUFFIX:
+    description: Prerelease suffix for your versions, default to your branchname. Note this will only be used if a it's a prerelease
+    required: false
+
+outputs:
+  new_tag:
+    description: Generated tag
+    value: ${{ steps.tag.outputs.new_tag }}
+  tag:
+    description: The latest tag before running this action
+    value: ${{ steps.latest_tag.outputs.pre_tag || steps.latest_tag.outputs.tag }}
+  part:
+    description: The part of version which was bumped
+    value: ${{ steps.tag.outputs.part }}
+  prerelease:
+    description: Prerelease suffix
+    value: ${{ steps.branch.outputs.prerelease }}
+  deploy: 
+    description: Deployable
+    value: ${{ steps.branch.outputs.deploy }}
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 16
+
+    - shell: bash
+      run: |
+        npm install -g semver
+
+    - shell: bash
+      id: branch
+      name: gather branch information
+      run: |
+        if [ $truncate == "1" ]; then
+          prerelease=$(echo $prerelease_suffix | sed 's/\([a-zA-Z0-9]\+\).*/\1/g')
+        else
+          prerelease=$(echo $prerelease_suffix | sed 's/[^a-zA-Z0-9]/-/g')
+        fi
+
+        echo "deploy=${{ (github.ref == format('refs/heads/{0}', github.event.repository.default_branch) || contains(github.event.head_commit.message, '#deploy_branch')) && 'true' || 'false' }}" >> $GITHUB_OUTPUT
+        echo "prerelease=$prerelease" >> $GITHUB_OUTPUT
+
+      env:
+        truncate: ${{ contains(inputs.TRUNCATE_PRERELEASE, 'false') && '0' || '1' }}
+        prerelease_suffix: ${{ inputs.prerelease_suffix || github.head_ref || github.ref_name }}
+
+    - shell: bash
+      name: get latest version tags
+      id: latest_tag
+      run: |
+        taglist=$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^$major\.[0-9]+\.[0-9]+$" || echo "" | xargs)
+
+        if [[ -n "${taglist/[ ]*\n/}" ]]; then
+          tag=$(semver $taglist | tail -n 1)
+        fi
+
+        pre_taglist=$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^$major\.[0-9]+\.[0-9]+(-$prerelease\.[0-9]+)?$" || echo "" | xargs)
+        
+        if [[ -n "${pre_taglist/[ ]*\n/}" ]]; then
+          pre_tag=$(semver $pre_taglist | tail -n 1)
+        fi
+
+        echo "tag=$tag" >> $GITHUB_OUTPUT
+        echo "pre_tag=$pre_tag" >> $GITHUB_OUTPUT
+      env:
+        prerelease: ${{ steps.branch.outputs.prerelease }}
+        initial_version: ${{ inputs.MAJOR && format('{0}.0.0', inputs.MAJOR) || env.INITIAL_VERSION }}
+        major: ${{ inputs.MAJOR && format('v?{0}', inputs.MAJOR) || 'v?[0-9]+'  }}
+
+    - shell: bash
+      name: get new version tag
+      id: tag
+      run: |
+        if [ -z "$tag" ]
+        then
+            if [ $is_pr == "1" ]; then
+              log=$(git log origin/${{ github.event.repository.default_branch }}...${{ github.event.after }} --pretty='%B')
+            else
+              log=$(git log ${{ github.event.before }}...origin/${{ github.event.repository.default_branch }}  --pretty='%B')
+            fi
+
+            tag="$initial_version"
+            if [ -z "$pre_tag" ] && $pre_release
+            then
+              pre_tag="$initial_version"
+            fi
+        else
+            log=$(git log $with_v$tag..HEAD --pretty='%B')
+        fi
+
+        case "$log" in
+          *BREAKING\ CHANGE:* ) new=$(semver -i $semver_arg_major $tag); part="major";;
+          *#major* ) new=$(semver -i $semver_arg_major $tag); part="major";;
+          *feat:* ) new=$(semver -i minor $tag); part="minor";;
+          *#minor* ) new=$(semver -i minor $tag); part="minor";;
+          *fix:* ) new=$(semver -i patch $tag); part="patch";;
+          *#patch* ) new=$(semver -i patch $tag); part="patch";;
+          * ) new=$(semver -i "${default_semvar_bump}" $tag); part=$default_semvar_bump 
+        esac
+
+        if [ $is_pr == "1" ]; then
+          if [[ "$pre_tag" == *"$new"* ]]; then
+              new=$(semver -i prerelease $pre_tag --preid $prerelease); part="pre-$part"
+          else
+              new="$new-$prerelease.1"; part="pre-$part"
+          fi
+        fi
+
+        echo "new_tag=$with_v$new" >> $GITHUB_OUTPUT
+        echo "part=$part" >> $GITHUB_OUTPUT
+      env:
+        tag: ${{ steps.latest_tag.outputs.tag }}
+        pre_tag: ${{ steps.latest_tag.outputs.pre_tag }}
+        initial_version: ${{ inputs.MAJOR && format('{0}.0.0', inputs.MAJOR) || env.INITIAL_VERSION }}
+        semver_arg_major: ${{ inputs.MAJOR && 'minor' || 'major' }}
+        default_semvar_bump: ${{ inputs.DEFAULT_BUMP }}
+        with_v: ${{ inputs.WITH_V == 'true' && 'v' || '' }}
+        is_pr: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && '0' || '1' }}
+        prerelease: ${{ steps.branch.outputs.prerelease }}
+
+    - shell: bash
+      name: output
+      run: |
+        echo "tag: ${{ steps.latest_tag.outputs.pre_tag || steps.latest_tag.outputs.tag  }}"
+        echo "new_tag: ${{ steps.tag.outputs.new_tag }}"
+        echo "part: ${{ steps.tag.outputs.part }}"
+        echo "prerelease: ${{ steps.branch.outputs.prerelease }}"
+        echo "deploy: ${{ steps.branch.outputs.deploy }}"

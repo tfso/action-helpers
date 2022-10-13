@@ -17,7 +17,7 @@ runs:
       shell: bash
       if: github.ref != format('refs/heads/{0}', env.MAIN_BRANCH)
       id: branch
-      run: echo "::set-output name=clean_title::$(echo ${{ github.head_ref }} | sed 's/[^a-zA-Z0-9]/-/g')"
+      run: echo "clean_title=$(echo ${{ github.head_ref }} | sed 's/[^a-zA-Z0-9]/-/g')" >> $GITHUB_OUTPUT
 
     - uses: actions/github-script@v6
       name: Create comment
