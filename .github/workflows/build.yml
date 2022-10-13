@@ -62,4 +62,4 @@ jobs:
         name: create github release
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+          version: ${{ needs.build.outputs.version }}
