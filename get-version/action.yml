@@ -44,6 +44,9 @@ outputs:
   prerelease:
     description: Prerelease suffix
     value: ${{ steps.branch.outputs.prerelease }}
+  is_prerelease:
+    description: Is version a prerelease? 
+    value: ${{ contains(steps.tag.outputs.is_prerelease, '0') && 'true' || 'false' }}
   deploy: 
     description: Deployable
     value: ${{ steps.branch.outputs.deploy }}
@@ -141,6 +144,7 @@ runs:
         echo "major=$with_v$(echo $new | sed -nr "s/^v?([0-9]+).*/\1/p")" >> $GITHUB_OUTPUT
         echo "new_tag=$with_v$new" >> $GITHUB_OUTPUT
         echo "part=$part" >> $GITHUB_OUTPUT
+        echo "is_prerelease=$is_pr" >> $GITHUB_OUTPUT
       env:
         tag: ${{ steps.latest_tag.outputs.tag }}
         pre_tag: ${{ steps.latest_tag.outputs.pre_tag }}
