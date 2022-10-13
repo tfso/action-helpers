@@ -1,0 +1,54 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '*.*'
+
+  workflow_dispatch:
+    inputs:
+      deploy:
+        type: boolean
+        required: true
+        description: Deploy package
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: build
+    if: ${{ (!github.event.workflow && true) || (github.ref != format('refs/heads/{0}', github.event.repository.default_branch) && true) || false }}
+    outputs:
+      version: ${{ steps.version.outputs.new_tag }}
+      deploy: ${{ steps.version.outputs.deploy }}
+    steps:
+      - name: get version
+        id: version
+        uses: ./.github/actions/get-version
+        with:
+          # MAJOR: ${{ inputs.MAJOR }}
+          WITH_V: true
+          TRUNCATE_PRERELEASE: true
+
+  tag:
+    if: needs.build.outputs.deploy == 'true' || github.event.inputs.deploy == 'true'
+    needs: [build]
+    runs-on: ubuntu-latest
+    name: push tag
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: push tag
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `refs/tags/${process.env.CUSTOM_TAG}`,
+              sha: context.sha
+            })
+        env:
+          CUSTOM_TAG: ${{ needs.build.outputs.version }}
