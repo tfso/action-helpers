@@ -35,6 +35,9 @@ outputs:
   tag:
     description: The latest tag before running this action
     value: ${{ steps.latest_tag.outputs.pre_tag || steps.latest_tag.outputs.tag }}
+  major: 
+    description: Major version of the generated
+    value:  ${{ steps.tag.outputs.major }}
   part:
     description: The part of version which was bumped
     value: ${{ steps.tag.outputs.part }}
@@ -135,6 +138,7 @@ runs:
           fi
         fi
 
+        echo "major=$with_v$(echo $new | sed -nr "s/^v?([0-9]+).*/\1/p")" >> $GITHUB_OUTPUT
         echo "new_tag=$with_v$new" >> $GITHUB_OUTPUT
         echo "part=$part" >> $GITHUB_OUTPUT
       env:
@@ -152,6 +156,7 @@ runs:
       run: |
         echo "tag: ${{ steps.latest_tag.outputs.pre_tag || steps.latest_tag.outputs.tag  }}"
         echo "new_tag: ${{ steps.tag.outputs.new_tag }}"
+        echo "major: ${{ steps.tag.outputs.major }}"
         echo "part: ${{ steps.tag.outputs.part }}"
         echo "prerelease: ${{ steps.branch.outputs.prerelease }}"
         echo "deploy: ${{ steps.branch.outputs.deploy }}"
