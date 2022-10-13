@@ -68,12 +68,12 @@ runs:
       if: github.ref != format('refs/heads/{0}', github.event.repository.default_branch)
       name: gather branch information
       run: |
-        echo "::set-output name=deploy::${{ contains(github.event.head_commit.message, '#deploy_branch') && 'true' || 'false' }}"
+        echo "deploy=${{ contains(github.event.head_commit.message, '#deploy_branch') && 'true' || 'false' }}" >> $GITHUB_OUTPUT
 
         if [ $TRUNCATE == "1" ]; then
-          echo "::set-output name=prerelease::$(echo ${{ github.ref_name }} | sed 's/\([a-zA-Z0-9]\+\).*/\1/g')"
+          echo "prerelease=$(echo ${{ github.ref_name }} | sed 's/\([a-zA-Z0-9]\+\).*/\1/g')" >> $GITHUB_OUTPUT
         else
-          echo "::set-output name=prerelease::$(echo ${{ github.ref_name }} | sed 's/[^a-zA-Z0-9]/-/g')"
+          echo "prerelease=$(echo ${{ github.ref_name }} | sed 's/[^a-zA-Z0-9]/-/g')" >> $GITHUB_OUTPUT
         fi
       env:
         TRUNCATE: ${{ contains(inputs.TRUNCATE_PRERELEASE, 'false') && '0' || '1' }}
@@ -124,7 +124,7 @@ runs:
       if: inputs.CUSTOM_TAG
       id: custom
       run: |
-        echo "::set-output name=new_tag::$(echo $CUSTOM_TAG | sed 's/v\?\(.*\)/\1/g')"
+        echo "new_tag=$(echo $CUSTOM_TAG | sed 's/v\?\(.*\)/\1/g')" >> $GITHUB_OUTPUT
         echo $CUSTOM_TAG | sed 's/v\?\(.*\)/\1/g'
       env:
         CUSTOM_TAG: ${{ inputs.CUSTOM_TAG }}
