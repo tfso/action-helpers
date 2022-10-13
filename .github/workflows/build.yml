@@ -38,7 +38,7 @@ jobs:
 
   tag:
     if: needs.build.outputs.deploy == 'true' || github.event.inputs.deploy == 'true'
-    needs: [build]
+    needs: build
     runs-on: ubuntu-latest
     name: push tag
     steps:
