@@ -49,10 +49,25 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
+            const tag = process.env.CUSTOM_TAG;
+
+            github.rest.git.createTag({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag: tag,
+              message: tag,
+              object: context.sha,
+              type: 'commit',
+              tagger: {
+                name: context.actor,
+                email: `${context.actor}@users.noreply.github.com`
+              }
+            })
+
             github.rest.git.createRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              ref: `refs/tags/${process.env.CUSTOM_TAG}`,
+              ref: `refs/tags/${tag}`,
               sha: context.sha
             })
         env:
