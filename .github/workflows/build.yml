@@ -23,9 +23,14 @@ jobs:
       version: ${{ steps.version.outputs.new_tag }}
       deploy: ${{ steps.version.outputs.deploy }}
     steps:
+      - name: checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       - name: get version
         id: version
-        uses: ./.github/actions/get-version
+        uses: ./get-version
         with:
           # MAJOR: ${{ inputs.MAJOR }}
           WITH_V: true
