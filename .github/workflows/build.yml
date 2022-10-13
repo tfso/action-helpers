@@ -46,29 +46,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: push tag
-        uses: actions/github-script@v6
+        uses: EndBug/latest-tag@v1
         with:
-          script: |
-            const tag = process.env.CUSTOM_TAG;
-
-            await github.rest.git.createTag({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              tag: tag,
-              message: tag,
-              object: context.sha,
-              type: 'commit',
-              tagger: {
-                name: context.actor,
-                email: `${context.actor}@users.noreply.github.com`
-              }
-            })
-
-            await github.rest.git.createRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: `refs/tags/${tag}`,
-              sha: context.sha
-            })
-        env:
-          CUSTOM_TAG: ${{ needs.build.outputs.version }}
+          ref: ${{ needs.build.outputs.version }}  
+          description: ${{ needs.build.outputs.version }}

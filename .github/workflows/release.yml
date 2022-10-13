@@ -27,33 +27,10 @@ jobs:
     needs: setup
     steps:
       - name: update major tag
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const sha = '${{ github.sha }}'
-            const major = '${{ needs.setup.outputs.major }}';
-
-            try {
-              await github.rest.git.updateRef({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                ref: `tags/${major}`,
-                sha: sha,
-                force: true,
-              });
-              core.info(`Updated ${major} to ${sha}`);
-
-            } catch(err) {
-              core.warning(`Failed to update ${major}: ${err}`);
-              await github.rest.git.createRef({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                ref: `refs/tags/${major}`,
-                sha: sha,
-              });
-
-              core.info(`Created ${major} at ${sha}`);
-            }
+        uses: EndBug/latest-tag@v1
+        with: 
+          ref: ${{ needs.setup.outputs.major }}
+          description: ${{ needs.setup.outputs.major }}
 
       - uses: tfso/action-changelog-release@v1.1.0
         name: create github release
