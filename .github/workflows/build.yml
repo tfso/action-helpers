@@ -45,20 +45,21 @@ jobs:
     name: push tag
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: push tag
-        uses: EndBug/latest-tag@v1
+        uses: ./tag
         with:
-          ref: ${{ needs.build.outputs.version }}
+          tag: ${{ needs.build.outputs.version }}
 
-      - name: push major tag
-        uses: EndBug/latest-tag@v1
+      - if: needs.build.outputs.is_prerelease == 'false'
+        name: push major tag
+        uses: ./tag
         with:
-          ref: ${{ needs.build.outputs.major }}
+          tag: ${{ needs.build.outputs.major }}
 
       - uses: tfso/action-changelog-release@v1.1.0
-        if: needs.build.outputs.is_prerelease == 'true'
+        if: needs.build.outputs.is_prerelease == 'false'
         name: create github release
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
