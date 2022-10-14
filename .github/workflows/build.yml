@@ -45,7 +45,7 @@ jobs:
     name: push tag
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: push tag
         uses: ./tag
