@@ -58,7 +58,7 @@ jobs:
           ref: ${{ needs.build.outputs.major }}
 
       - uses: tfso/action-changelog-release@v1.1.0
-        if: needs.build.outputs.is_prerelease == 'true'
+        if: needs.build.outputs.is_prerelease == 'false'
         name: create github release
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

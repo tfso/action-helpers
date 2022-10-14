@@ -46,7 +46,7 @@ outputs:
     value: ${{ steps.branch.outputs.prerelease }}
   is_prerelease:
     description: Is version a prerelease? 
-    value: ${{ contains(steps.tag.outputs.is_prerelease, '0') && 'true' || 'false' }}
+    value: ${{ contains(steps.tag.outputs.is_prerelease, '1') && 'true' || 'false' }}
   deploy: 
     description: Deployable
     value: ${{ steps.branch.outputs.deploy }}
