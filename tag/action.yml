@@ -1,0 +1,68 @@
+name: Tag
+description: ''
+
+inputs:
+  GITHUB_TOKEN:
+    description: Github Token
+    required: false
+
+  tag: 
+    description: Name of tag
+    required: true
+
+  message: 
+    description: Message to the annotated tag, if left out a lightweight tag is created
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - if: ${{ inputs.message }}
+      name: create annotated tag
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ inputs.GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        tag: ${{ inputs.tag }}
+        message: ${{ inputs.message }}
+        script: |
+          const tag = core.getInput('tag');
+          const message = core.getInput('message') || tag;
+
+          await github.rest.git.createTag({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            tag,
+            message,
+            object: context.sha,
+            type: 'commit',
+            tagger: {
+              name: context.actor,
+              email: `${context.actor}@users.noreply.github.com`
+            }
+          })
+    
+    - name: create ref
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ inputs.GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        tag: ${{ inputs.tag }}
+        message: ${{ inputs.message }}
+        script: |
+          const tag = core.getInput('tag');
+          
+          try {
+            await github.rest.git.updateRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `refs/tags/${tag}`,
+              sha: context.sha
+            })
+          }
+          catch(err) {
+            await github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `refs/tags/${tag}`,
+              sha: context.sha
+            })
+          }

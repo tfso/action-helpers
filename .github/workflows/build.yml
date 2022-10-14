@@ -48,14 +48,15 @@ jobs:
         uses: actions/checkout@v2
 
       - name: push tag
-        uses: EndBug/latest-tag@v1
+        uses: ./tag
         with:
-          ref: ${{ needs.build.outputs.version }}
+          tag: ${{ needs.build.outputs.version }}
 
-      - name: push major tag
-        uses: EndBug/latest-tag@v1
+      - if: needs.build.outputs.is_prerelease == 'false'
+        name: push major tag
+        uses: ./tag
         with:
-          ref: ${{ needs.build.outputs.major }}
+          tag: ${{ needs.build.outputs.major }}
 
       - uses: tfso/action-changelog-release@v1.1.0
         if: needs.build.outputs.is_prerelease == 'false'
