@@ -21,7 +21,7 @@ runs:
       name: create annotated tag
       uses: actions/github-script@v6
       with:
-        github-token: ${{ inputs.GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        github-token: ${{ inputs.GITHUB_TOKEN || env.GITHUB_TOKEN || github.token }}
         tag: ${{ inputs.tag }}
         message: ${{ inputs.message }}
         script: |
