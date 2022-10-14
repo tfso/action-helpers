@@ -22,11 +22,9 @@ runs:
       uses: actions/github-script@v6
       with:
         github-token: ${{ inputs.GITHUB_TOKEN || env.GITHUB_TOKEN || github.token }}
-        tag: ${{ inputs.tag }}
-        message: ${{ inputs.message }}
         script: |
-          const tag = core.getInput('tag');
-          const message = core.getInput('message') || tag;
+          const tag = process.env.tag;
+          const message = process.env.message || tag;
 
           await github.rest.git.createTag({
             owner: context.repo.owner,
@@ -40,15 +38,16 @@ runs:
               email: `${context.actor}@users.noreply.github.com`
             }
           })
+      env: 
+        tag: ${{ inputs.tag }}
+        message: ${{ inputs.message }}
     
     - name: create ref
       uses: actions/github-script@v6
       with:
         github-token: ${{ inputs.GITHUB_TOKEN || env.GITHUB_TOKEN || github.token }}
-        tag: ${{ inputs.tag }}
-        message: ${{ inputs.message }}
         script: |
-          const tag = core.getInput('tag');
+          const tag = process.env.tag;
           
           try {
             await github.rest.git.updateRef({
@@ -66,3 +65,6 @@ runs:
               sha: context.sha
             })
           }
+      env:
+        tag: ${{ inputs.tag }}
+        message: ${{ inputs.message }}
