@@ -50,15 +50,6 @@ runs:
           const tag = process.env.tag;
           
           try {
-            console.log('request dump');
-            console.log({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: `tags/${tag}`,
-              sha: context.sha,
-              force: true
-            })
-
             await github.rest.git.updateRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -68,8 +59,6 @@ runs:
             })
           }
           catch(err) {
-            console.error(err);
-
             await github.rest.git.createRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
