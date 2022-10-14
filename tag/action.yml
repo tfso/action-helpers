@@ -62,7 +62,7 @@ runs:
             await github.rest.git.updateRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              ref: `refs/tags/${tag}`,
+              ref: `tags/${tag}`,
               sha: context.sha,
               force: true
             })
