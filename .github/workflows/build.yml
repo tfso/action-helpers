@@ -21,7 +21,8 @@ jobs:
     if: ${{ (!github.event.workflow && true) || (github.ref != format('refs/heads/{0}', github.event.repository.default_branch) && true) || false }}
     outputs:
       version: ${{ steps.version.outputs.new_tag }}
-      major: ${{ steps.version.outputs.major }}
+      major: ${{ steps.version.outputs.major_tag }}
+      minor: ${{ steps.version.outputs.minor_tag }}
       is_prerelease: ${{ steps.version.outputs.is_prerelease }}
       deploy: ${{ steps.version.outputs.deploy }}
     steps:
@@ -34,7 +35,6 @@ jobs:
         id: version
         uses: ./get-version
         with:
-          # MAJOR: ${{ inputs.MAJOR }}
           WITH_V: true
           TRUNCATE_PRERELEASE: true
 
@@ -48,17 +48,23 @@ jobs:
         uses: actions/checkout@v3
 
       - name: push tag
-        uses: ./tag
+        uses: tfso/action-helpers/tag@v1
         with:
           tag: ${{ needs.build.outputs.version }}
 
       - if: needs.build.outputs.is_prerelease == 'false'
         name: push major tag
-        uses: ./tag
+        uses: tfso/action-helpers/tag@v1
         with:
           tag: ${{ needs.build.outputs.major }}
 
-      - uses: tfso/action-changelog-release@v1.1.0
+      - if: needs.build.outputs.is_prerelease == 'false'
+        name: push major tag
+        uses: tfso/action-helpers/tag@v1
+        with:
+          tag: ${{ needs.build.outputs.minor }}
+
+      - uses: tfso/action-changelog-release@v1
         if: needs.build.outputs.is_prerelease == 'false'
         name: create github release
         with:
