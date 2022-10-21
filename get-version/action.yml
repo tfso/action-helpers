@@ -31,13 +31,22 @@ inputs:
 outputs:
   new_tag:
     description: Generated tag
-    value: ${{ steps.tag.outputs.new_tag }}
+    value: ${{ steps.tag.outputs.with_v }}${{ steps.tag.outputs.new_tag }}
   tag:
     description: The latest tag before running this action
     value: ${{ steps.latest_tag.outputs.pre_tag || steps.latest_tag.outputs.tag }}
-  major: 
-    description: Major version of the generated
-    value:  ${{ steps.tag.outputs.major }}
+  major:
+    description: Major version of the generated tag
+    value: ${{ steps.tag.outputs.major }}
+  major_tag:
+    description: Major tag version of the generated tag, eg v1, 1
+    value: ${{ steps.tag.outputs.with_v }}${{ steps.tag.outputs.major }}
+  minor:
+    description: Minor version of the generated tag
+    value:  ${{ steps.tag.outputs.minor }}
+  minor_tag:
+    description: Minor tag version of the generated tag, eg v1.2, 1.2
+    value: ${{ steps.tag.outputs.with_v }}${{ steps.tag.outputs.major }}.${{ steps.tag.outputs.minor }}
   part:
     description: The part of version which was bumped
     value: ${{ steps.tag.outputs.part }}
@@ -141,8 +150,10 @@ runs:
           fi
         fi
 
-        echo "major=$with_v$(echo $new | sed -nr "s/^v?([0-9]+).*/\1/p")" >> $GITHUB_OUTPUT
-        echo "new_tag=$with_v$new" >> $GITHUB_OUTPUT
+        echo "major=$(echo $new | sed -nr "s/^v?([0-9]+).*/\1/p")" >> $GITHUB_OUTPUT
+        echo "minor=$(echo $new | sed -nr "s/^v?[0-9]+\.([0-9]+).*/\1/p")" >> $GITHUB_OUTPUT
+        echo "with_v=$with_v" >> $GITHUB_OUTPUT
+        echo "new_tag=$new" >> $GITHUB_OUTPUT
         echo "part=$part" >> $GITHUB_OUTPUT
         echo "is_prerelease=$is_pr" >> $GITHUB_OUTPUT
       env:
@@ -161,6 +172,8 @@ runs:
         echo "tag: ${{ steps.latest_tag.outputs.pre_tag || steps.latest_tag.outputs.tag  }}"
         echo "new_tag: ${{ steps.tag.outputs.new_tag }}"
         echo "major: ${{ steps.tag.outputs.major }}"
+        echo "minor: ${{ steps.tag.outputs.minor }}"
+        echo "with_v: ${{ steps.tag.outputs.with_v }}"
         echo "part: ${{ steps.tag.outputs.part }}"
         echo "prerelease: ${{ steps.branch.outputs.prerelease }}"
         echo "deploy: ${{ steps.branch.outputs.deploy }}"
