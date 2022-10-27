@@ -29,19 +29,19 @@ runs:
   using: "composite"
   steps:
     - name: Log into registry ${{ inputs.registry }}
-      uses: docker/login-action@v1
+      uses: docker/login-action@v2
       with:
         username: ${{ inputs.username }}
         password: ${{ inputs.password }}
 
     - name: Extract Docker metadata
       id: meta
-      uses: docker/metadata-action@v3
+      uses: docker/metadata-action@v4
       with:
         images: ${{ inputs.image }}
     
     - name: Build and push Docker image
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v3
       with:
         context: ${{ inputs.context }}
         push: ${{ inputs.push }}
