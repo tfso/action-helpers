@@ -93,15 +93,17 @@ runs:
       id: latest_tag
       run: |
         taglist=$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^$major\.[0-9]+\.[0-9]+$" || echo "" | xargs)
-
+      
         if [[ -n "${taglist/[ ]*\n/}" ]]; then
-          tag=$(semver $taglist | tail -n 1)
+          semver_tag=$(semver $taglist | tail -n 1)
+          tag=$(echo $taglist | sed 's/\s/\n/g' | grep $semver_tag)
         fi
 
         pre_taglist=$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^$major\.[0-9]+\.[0-9]+(-$prerelease\.[0-9]+)?$" || echo "" | xargs)
         
         if [[ -n "${pre_taglist/[ ]*\n/}" ]]; then
-          pre_tag=$(semver $pre_taglist | tail -n 1)
+          semver_pre_tag=$(semver $pre_taglist | tail -n 1)
+          pre_tag=$(echo $pre_taglist | sed 's/\s/\n/g' | grep $semver_pre_tag)
         fi
 
         echo "tag=$tag" >> $GITHUB_OUTPUT
@@ -129,7 +131,7 @@ runs:
               pre_tag="$initial_version"
             fi
         else
-            log=$(git log $with_v$tag..HEAD --pretty='%B')
+            log=$(git log $tag..HEAD --pretty='%B')
         fi
 
         case "$log" in
@@ -162,7 +164,7 @@ runs:
         initial_version: ${{ inputs.MAJOR && format('{0}.0.0', inputs.MAJOR) || env.INITIAL_VERSION }}
         semver_arg_major: ${{ inputs.MAJOR && 'minor' || 'major' }}
         default_semvar_bump: ${{ inputs.DEFAULT_BUMP }}
-        with_v: ${{ inputs.WITH_V == 'true' && 'v' || '' }}
+        with_v: ${{ contains(inputs.WITH_V, 'true') && 'v' || '' }}
         is_pr: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && '0' || '1' }}
         prerelease: ${{ steps.branch.outputs.prerelease }}
 
