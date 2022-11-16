@@ -99,7 +99,7 @@ runs:
           tag=$(echo $taglist | sed 's/\s/\n/g' | grep $semver_tag)
         fi
 
-        pre_taglist=$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^$major\.[0-9]+\.[0-9]+(-$prerelease\.[0-9]+)?$" || echo "" | xargs)
+        pre_taglist=$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^$major\.[0-9]+\.[0-9]+(-$prerelease\.[0-9]+)$" || echo "" | xargs)
         
         if [[ -n "${pre_taglist/[ ]*\n/}" ]]; then
           semver_pre_tag=$(semver $pre_taglist | tail -n 1)
