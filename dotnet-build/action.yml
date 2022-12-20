@@ -1,0 +1,114 @@
+name: 'Build dotnet'
+
+inputs:
+  GITHUB_TOKEN:
+    description: access to current github repository
+    required: true
+  GITHUB_GLOBAL_TOKEN:
+    description: access to github repositories for legacy packages
+    required: false
+  NPM_TOKEN:
+    description: access token to @tfso NPM registry
+    required: false
+  DEFAULT_BUMP: 
+    description: may be major, minor or patch, defaults to patch
+    required: false
+    default: 'patch'
+  INITIAL_VERSION:
+    description: initial version, nice if migrating from other build platforms
+    required: false
+  CUSTOM_TAG:
+    description: Set a custom tag, useful when generating tag based on f.ex FROM image in a docker image. Setting this tag will invalidate any other settings set!
+    required: false
+  DOTNET_VERSION: 
+    description: dotnet version, defaults to 6
+    required: false
+    default: "6"
+  DOTNET_TYPE:
+    description: pack or publish
+    required: false
+    default: publish
+  TRUNCATE_PRERELEASE:
+    description: truncate branchname to first word
+    required: false
+    default: true
+  INCLUDE_SUBMODULES:
+    description: include submodules at checkout
+    required: false
+    default: false
+  
+outputs:
+  version: 
+    description: the full version including 'v', will be prereleased if build is a branch
+    value: ${{ steps.custom.outputs.new_tag || format('v{0}', steps.semver.outputs.new_tag) }}
+  prerelease: 
+    description: prerelease suffix for PR builds and will truncate branchname to first word ('feature/my-feature' will be 'feature') unless TRUNCATE_PRERELEASE is set to `false`
+    value: ${{ steps.semver.outputs.prerelease }}
+  deploy: 
+    description: always 'true' if main branch, and always 'false' for other branchers except if a commit contains '#deploy_branch'
+    value: ${{ steps.semver.outputs.deploy == 'false' && 'false' || 'true' }}
+
+runs:
+  using: 'composite'     
+  steps: 
+    - name: checkout
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: '0' # important for versioning
+    
+    - name: setup
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ inputs.dotnet-version }}
+        dotnet-quality: ga
+    
+    - name: create version
+      if: inputs.CUSTOM_TAG == ''
+      id: semver
+      uses: tfso/action-helpers/get-version@v1
+      with:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        INITIAL_VERSION: ${{ inputs.initial-version }}
+        DEFAULT_BUMP: ${{ inputs.default-bump }}
+        TRUNCATE_PRERELEASE: ${{ inputs.TRUNCATE_PRERELEASE }}
+        WITH_V: false
+
+    - shell: bash
+      name: fix custom version/tag
+      if: inputs.CUSTOM_TAG
+      id: custom
+      run: |
+        echo "new_tag=$(echo $CUSTOM_TAG | sed 's/v\?\(.*\)/\1/g')" >> $GITHUB_OUTPUT
+        echo $CUSTOM_TAG | sed 's/v\?\(.*\)/\1/g'
+      env:
+        CUSTOM_TAG: ${{ inputs.CUSTOM_TAG }}
+
+    - shell: bash 
+      name: nuget source
+      run: |
+        dotnet nuget add source --username ${{ github.actor }} --password ${{ secrets.NPM_TFSO_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/tfso/index.json"      
+
+    - shell: bash
+      name: install
+      run: |
+        dotnet restore
+
+    - shell: bash
+      name: build
+      run: |
+        dotnet build --configuration Release --no-restore /property:Version=${{ steps.semver.outputs.new_tag }}
+
+    - shell: bash
+      name: test
+      run: |
+        dotnet test --no-restore --verbosity normal
+
+    - shell: bash
+      name: publish
+      run: |
+        for directory in $(find . -type f -name '*.*proj')
+        do
+          project=$(echo $directory | sed "s/^\.\/\([^/]\+\).*$/\1/g")
+          dotnet ${{ inputs.DOTNET_TYPE }} $directory --configuration Release --no-restore --no-build --output ".build/$project"
+        done
