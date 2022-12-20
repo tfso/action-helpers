@@ -118,3 +118,5 @@ runs:
           project=$(echo $directory | sed "s/^\.\/\([^/]\+\).*$/\1/g")
           dotnet ${{ inputs.DOTNET_TYPE }} $directory --configuration Release --no-restore --no-build --output $OUTPUT_DIR/$project
         done
+      env:
+        OUTPUT_DIR: ${{ inputs.OUTPUT_DIR }}
