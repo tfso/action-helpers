@@ -90,7 +90,10 @@ runs:
     - shell: bash 
       name: nuget source
       run: |
-        dotnet nuget add source --store-password-in-clear-text --username ${{ github.actor }} --password ${{ inputs.NPM_TFSO_TOKEN }} --name github "https://nuget.pkg.github.com/tfso/index.json"      
+        dotnet nuget add source --store-password-in-clear-text --username $USERNAME --password $PASSWORD --name github "https://nuget.pkg.github.com/tfso/index.json"      
+      env: 
+        USERNAME: ${{ github.actor }}
+        PASSWORD: ${{ inputs.NPM_TFSO_TOKEN }}
 
     - shell: bash
       name: install
