@@ -57,7 +57,7 @@ runs:
     - name: checkout
       uses: actions/checkout@v3
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ inputs.GITHUB_TOKEN }}
         fetch-depth: '0' # important for versioning
     
     - name: setup
@@ -71,7 +71,7 @@ runs:
       id: semver
       uses: tfso/action-helpers/get-version@v1
       with:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
         INITIAL_VERSION: ${{ inputs.initial-version }}
         DEFAULT_BUMP: ${{ inputs.default-bump }}
         TRUNCATE_PRERELEASE: ${{ inputs.TRUNCATE_PRERELEASE }}
@@ -90,7 +90,7 @@ runs:
     - shell: bash 
       name: nuget source
       run: |
-        dotnet nuget add source --username ${{ github.actor }} --password ${{ secrets.NPM_TFSO_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/tfso/index.json"      
+        dotnet nuget add source --username ${{ github.actor }} --password ${{ inputs.NPM_TFSO_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/tfso/index.json"      
 
     - shell: bash
       name: install
