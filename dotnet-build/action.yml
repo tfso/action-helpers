@@ -29,7 +29,7 @@ inputs:
     required: false
     default: publish
   OUTPUT_DIR:
-    description: output directory
+    description: output directory, each project will have their own folder
     default: .build
   TRUNCATE_PRERELEASE:
     description: truncate branchname to first word
@@ -39,7 +39,7 @@ inputs:
     description: include submodules at checkout
     required: false
     default: false
-  
+
 outputs:
   version: 
     description: the full version including 'v', will be prereleased if build is a branch
@@ -108,7 +108,7 @@ runs:
     - shell: bash
       name: test
       run: |
-        dotnet test --no-restore --verbosity normal
+        dotnet test --no-restore --verbosity normal --filter "TestCategory!=Integration"
 
     - shell: bash
       name: publish
