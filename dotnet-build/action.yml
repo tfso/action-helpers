@@ -18,7 +18,7 @@ inputs:
     description: initial version, nice if migrating from other build platforms
     required: false
   CUSTOM_TAG:
-    description: Set a custom tag, useful when generating tag based on f.ex FROM image in a docker image. Setting this tag will invalidate any other settings set!
+    description: set a custom tag, useful when generating tag based on f.ex FROM image in a docker image. Setting this tag will invalidate any other settings set!
     required: false
   DOTNET_VERSION: 
     description: dotnet version, defaults to 6
@@ -29,16 +29,21 @@ inputs:
     required: false
     default: publish
   OUTPUT_DIR:
-    description: output directory, each project will have their own folder
+    description: output directory
+    required: false
     default: .build
+  OUTPUT_FLATTEN:
+    description: each project will have their own folder if output isn't flatten
+    required: false
+    default: 'false'
   TRUNCATE_PRERELEASE:
     description: truncate branchname to first word
     required: false
-    default: true
+    default: 'true'
   INCLUDE_SUBMODULES:
     description: include submodules at checkout
     required: false
-    default: false
+    default: 'false'
 
 outputs:
   version: 
@@ -121,11 +126,20 @@ runs:
 
     - shell: bash
       name: publish
+      if: inputs.OUTPUT_FLATTEN != 'true'
       run: |
         for directory in $(find . -type f -name '*.*proj')
         do
           project=$(echo $directory | sed "s/^\.\/\([^/]\+\).*$/\1/g")
           dotnet ${{ inputs.DOTNET_TYPE }} $directory --configuration Release --no-restore --no-build --output $OUTPUT_DIR/$project
         done
+      env:
+        OUTPUT_DIR: ${{ inputs.OUTPUT_DIR }}
+
+    - shell: bash
+      name: publish
+      if: inputs.OUTPUT_FLATTEN == 'true'
+      run: |
+        dotnet ${{ inputs.DOTNET_TYPE }} --configuration Release --no-restore --no-build --output $OUTPUT_DIR
       env:
         OUTPUT_DIR: ${{ inputs.OUTPUT_DIR }}
