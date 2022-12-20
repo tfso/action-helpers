@@ -63,7 +63,7 @@ runs:
     - name: setup
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: ${{ inputs.dotnet-version }}
+        dotnet-version: ${{ inputs.DOTNET_VERSION }}
         dotnet-quality: ga
     
     - name: create version
@@ -72,8 +72,8 @@ runs:
       uses: tfso/action-helpers/get-version@v1
       with:
         GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
-        INITIAL_VERSION: ${{ inputs.initial-version }}
-        DEFAULT_BUMP: ${{ inputs.default-bump }}
+        INITIAL_VERSION: ${{ inputs.INITIAL_VERSION }}
+        DEFAULT_BUMP: ${{ inputs.DEFAULT_BUMP }}
         TRUNCATE_PRERELEASE: ${{ inputs.TRUNCATE_PRERELEASE }}
         WITH_V: false
 
