@@ -101,9 +101,18 @@ runs:
         dotnet restore
 
     - shell: bash
+      name: update project version
+      run: |
+        sed -i "s/\(<Version>\)[0-9a-z\.-]\+/\1$VERSION/" **/*.csproj
+        sed -i "s/\(<PackageVersion>\)[0-9a-z\.-]\+/\1$VERSION/" **/*.csproj
+        sed -i "s/\(<FileVersion>\)[0-9a-z\.-]\+/\1$VERSION/" **/*.csproj
+      env:
+        VERSION: ${{ steps.custom.outputs.new_tag || steps.semver.outputs.new_tag }}
+
+    - shell: bash
       name: build
       run: |
-        dotnet build --configuration Release --no-restore /property:Version=${{ steps.semver.outputs.new_tag }}
+        dotnet build --configuration Release --no-restore /property:Version=${{ steps.custom.outputs.new_tag || steps.semver.outputs.new_tag }}
 
     - shell: bash
       name: test
