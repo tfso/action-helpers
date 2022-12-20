@@ -28,6 +28,9 @@ inputs:
     description: pack or publish
     required: false
     default: publish
+  OUTPUT_DIR:
+    description: output directory
+    default: .build
   TRUNCATE_PRERELEASE:
     description: truncate branchname to first word
     required: false
@@ -110,5 +113,5 @@ runs:
         for directory in $(find . -type f -name '*.*proj')
         do
           project=$(echo $directory | sed "s/^\.\/\([^/]\+\).*$/\1/g")
-          dotnet ${{ inputs.DOTNET_TYPE }} $directory --configuration Release --no-restore --no-build --output ".build/$project"
+          dotnet ${{ inputs.DOTNET_TYPE }} $directory --configuration Release --no-restore --no-build --output $OUTPUT_DIR/$project
         done
