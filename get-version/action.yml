@@ -27,6 +27,10 @@ inputs:
   PRERELEASE_SUFFIX:
     description: Prerelease suffix for your versions, default to your branchname. Note this will only be used if a it's a prerelease
     required: false
+  DEFAULT_BRANCH:
+    description: Default main branch, other than this branch will be treated as a prerelease
+    required: false
+    default: ${{ github.event.repository.default_branch }}
 
 outputs:
   new_tag:
@@ -120,9 +124,9 @@ runs:
         if [ -z "$tag" ]
         then
             if [ $is_pr == "1" ]; then
-              log=$(git log origin/${{ github.event.repository.default_branch }}...${{ github.event.after }} --pretty='%B')
+              log=$(git log origin/${{ inputs.DEFAULT_BRANCH }}...${{ github.event.after }} --pretty='%B')
             else
-              log=$(git log ${{ github.event.before }}...origin/${{ github.event.repository.default_branch }}  --pretty='%B')
+              log=$(git log ${{ github.event.before }}...origin/${{ inputs.DEFAULT_BRANCH }}  --pretty='%B')
             fi
 
             tag="$initial_version"
@@ -165,7 +169,7 @@ runs:
         semver_arg_major: ${{ inputs.MAJOR && 'minor' || 'major' }}
         default_semvar_bump: ${{ inputs.DEFAULT_BUMP }}
         with_v: ${{ contains(inputs.WITH_V, 'true') && 'v' || '' }}
-        is_pr: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && '0' || '1' }}
+        is_pr: ${{ github.ref == format('refs/heads/{0}', inputs.DEFAULT_BRANCH) && '0' || '1' }}
         prerelease: ${{ steps.branch.outputs.prerelease }}
 
     - shell: bash
