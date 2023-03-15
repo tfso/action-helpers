@@ -1,9 +1,20 @@
 name: 'Setup'
 description: ''
 
+inputs:
+  environment:
+    description: Environment
+    default: ${{ env.DEPLOYMENT_ENVIRONMENT }}
+    required: false
+
+  services:
+    description: Services
+    default: ${{ env.SERVICE_NAME }}
+    required: false
+
 outputs:
   version: 
-    description: the full version including 'v', will be prereleased if build is a branch
+    description: the full version not including 'v', will be prereleased if build is a branch
     value: ${{ steps.semver.outputs.fullversion }}
   prerelease: 
     description: prerelease suffix for PR builds and will truncate branchname to first word ('feature/my-feature' will be 'feature') unless TRUNCATE_PRERELEASE is set to `false`
@@ -28,27 +39,21 @@ runs:
     - name: get environment
       uses: actions/github-script@v6
       id: environment
-      env:
-        SERVICES: ${{ env.SERVICE_NAME }}
       with:
         result-encoding: string
-        script: |
-          return process.env.DEPLOYMENT_ENVIRONMENT
-
+        default: ${{ inputs.environment }}
     - name: extract services
       uses: actions/github-script@v6
       id: script
-      env: 
-        SERVICES: ${{ env.SERVICE_NAME}}
       with:
         result-encoding: string
         script: |
-          if(/^\s*[\[{][\s\S]*[\]}]\s*$/.test(process.env.SERVICES)) {
-            return JSON.stringify([].concat(...[JSON.parse(process.env.SERVICES)]))
+          if(/^\s*[\[{][\s\S]*[\]}]\s*$/.test(inputs.services)) {
+            return JSON.stringify([].concat(...[JSON.parse(inputs.services)]))
           }
           else {
             return JSON.stringify(
-              String(process.env.SERVICES)
+              String(inputs.services)
                 .split(/[\n]/i)
                 .filter(line => line.length > 0)
                 .map(line => (
