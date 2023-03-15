@@ -1,11 +1,19 @@
 name: 'Setup'
 description: ''
 
-outputs: 
-  version: v${{ steps.semver.outputs.fullversion }}
-  prerelease: ${{ steps.semver.outputs.prerelease }}
-  environment: ${{ steps.environment.outputs.result }}
-  services: ${{ steps.script.outputs.result }}
+outputs:
+  version: 
+    description: the full version including 'v', will be prereleased if build is a branch
+    value: ${{ steps.semver.outputs.fullversion }}
+  prerelease: 
+    description: prerelease suffix for PR builds and will truncate branchname to first word ('feature/my-feature' will be 'feature') unless TRUNCATE_PRERELEASE is set to `false`
+    value: ${{ steps.semver.outputs.prerelease }}
+  environment: 
+    description: environment
+    value: ${{ steps.environment.outputs.result }}
+  services: 
+    description: services
+    value: ${{ steps.script.outputs.result }}
 
 runs:
   using: 'composite'
