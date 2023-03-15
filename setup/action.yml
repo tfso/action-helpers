@@ -1,0 +1,55 @@
+name: 'Setup'
+description: ''
+
+outputs: 
+  version: v${{ steps.semver.outputs.fullversion }}
+  prerelease: ${{ steps.semver.outputs.prerelease }}
+  environment: ${{ steps.environment.outputs.result }}
+  services: ${{ steps.script.outputs.result }}
+
+runs:
+  using: 'composite'
+  steps: 
+    - name: extract tag version
+      id: semver 
+      uses: booxmedialtd/ws-action-parse-semver@v1.4.7
+      with:
+        input_string: ${{ github.ref }}
+        version_extractor_regex: 'refs\/tags\/v(.*)$'
+
+    - name: get environment
+      uses: actions/github-script@v6
+      id: environment
+      env:
+        SERVICES: ${{ env.SERVICE_NAME }}
+      with:
+        result-encoding: string
+        script: |
+          return process.env.DEPLOYMENT_ENVIRONMENT
+
+    - name: extract services
+      uses: actions/github-script@v6
+      id: script
+      env: 
+        SERVICES: ${{ env.SERVICE_NAME}}
+      with:
+        result-encoding: string
+        script: |
+          if(/^\s*[\[{][\s\S]*[\]}]\s*$/.test(process.env.SERVICES)) {
+            return JSON.stringify([].concat(...[JSON.parse(process.env.SERVICES)]))
+          }
+          else {
+            return JSON.stringify(
+              String(process.env.SERVICES)
+                .split(/[\n]/i)
+                .filter(line => line.length > 0)
+                .map(line => (
+                  /(\w+=([^;]+);)+(\w+=([^;]+))?/g.test(line) == false
+                  ? ({ name: line }) 
+                  : Object.fromEntries(line
+                    .split(/;/g)
+                    .map(keyvaluepair => (/(\w+)=(.*)/g.exec(keyvaluepair) ?? []).splice(1))
+                  )
+              ))
+            )
+          }
