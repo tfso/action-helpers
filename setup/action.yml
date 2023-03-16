@@ -19,7 +19,7 @@ outputs:
     value: ${{ steps.semver.outputs.prerelease }}
   environment: 
     description: environment
-    value: ${{ steps.environment.outputs.result }}
+    value: ${{ inputs.environment }}
   services: 
     description: services
     value: ${{ steps.script.outputs.result }}
@@ -43,24 +43,6 @@ runs:
       with:
         input_string: ${{ github.ref }}
         version_extractor_regex: 'refs\/tags\/v(.*)$'
-
-    - name: get environment
-      uses: actions/github-script@v6
-      id: environment
-      with:
-        result-encoding: string
-        script: |
-                - name: extract services
-        uses: actions/github-script@v6
-        id: script
-        env: 
-          SERVICES: ${{ env.SERVICE_NAME}}
-        with:
-          result-encoding: string
-          script: |
-            if(/^\s*[\[{][\s\S]*[\]}]\s*$/.test(process.env.SERVICES)) {
-              return JSON.stringify([].concat(...[JSON.parse(process.env.SERVICES)]))
-            }
 
     - name: extract services
       uses: actions/github-script@v6
