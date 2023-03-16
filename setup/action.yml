@@ -4,12 +4,10 @@ description: ''
 inputs:
   environment:
     description: Environment
-    default: ${{ env.DEPLOYMENT_ENVIRONMENT }}
     required: false
 
   services:
     description: Services
-    default: ${{ env.SERVICE_NAME }}
     required: false
 
 outputs:
@@ -28,7 +26,17 @@ outputs:
 
 runs:
   using: 'composite'
-  steps: 
+  steps:
+    - name: initialize default inputs
+      id: init
+      uses: actions/github-script@v6
+      with:
+        script: |
+          if (!inputs.services)
+            inputs.services = process.env.SERVICE_NAME;
+          if (!inputs.environment)
+            inputs.environment = process.env.DEPLOYMENT_ENVIRONMENT;
+
     - name: extract tag version
       id: semver 
       uses: booxmedialtd/ws-action-parse-semver@v1.4.7
@@ -41,7 +49,19 @@ runs:
       id: environment
       with:
         result-encoding: string
-        default: ${{ inputs.environment }}
+        script: |
+                - name: extract services
+        uses: actions/github-script@v6
+        id: script
+        env: 
+          SERVICES: ${{ env.SERVICE_NAME}}
+        with:
+          result-encoding: string
+          script: |
+            if(/^\s*[\[{][\s\S]*[\]}]\s*$/.test(process.env.SERVICES)) {
+              return JSON.stringify([].concat(...[JSON.parse(process.env.SERVICES)]))
+            }
+
     - name: extract services
       uses: actions/github-script@v6
       id: script
