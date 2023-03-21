@@ -22,27 +22,25 @@ outputs:
     value: ${{ steps.init.outputs.environment }}
   services: 
     description: services
-    value: ${{ steps.script.outputs.result }}
+    value: ${{ steps.initServices.outputs.result }}
 
 runs:
   using: 'composite'
   steps:
     - name: initialize default inputs (service)
-      id: init
+      id: initServices
       uses: actions/github-script@v6
-      env:
-        SERVICES: ${{ inputs.services }}
-        ENVIRONMENT: ${{ inputs.environment }}
       with:
         script: |
-          if (!env.SERVICES)
-            env.SERVICES = process.env.SERVICE_NAME;
-          if (!env.ENVIRONMENT)
-            env.ENVIRONMENT = process.env.DEPLOYMENT_ENVIRONMENT;
-        outputs:
-          services: ${{ env.SERVICES }}
-          environment: ${{ env.ENVIRONMENT }}
+            return inputs.services || process.env.SERVICE_NAME;
 
+    - name: initialize default inputs (service)
+      id: initEnvironment
+      uses: actions/github-script@v6
+      with:
+        script: |
+            return inputs.environment || process.env.DEPLOYMENT_ENVIRONMENT;
+          
     - name: extract tag version
       id: semver 
       uses: booxmedialtd/ws-action-parse-semver@v1.4.7
