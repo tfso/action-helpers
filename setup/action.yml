@@ -34,7 +34,7 @@ runs:
         script: |
             return env.services || process.env.SERVICE_NAME;
         env:
-          services: ${{ inputs.services }}
+          services: format('{0}', inputs.services)
 
     - name: initialize default inputs (service)
       id: initEnvironment
@@ -43,7 +43,7 @@ runs:
         script: |
             return env.environment || process.env.DEPLOYMENT_ENVIRONMENT;
         env:
-          environment: ${{ inputs.environment }}
+          environment: format('{0}', inputs.environment)
           
     - name: extract tag version
       id: semver 
