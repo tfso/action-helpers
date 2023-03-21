@@ -32,14 +32,18 @@ runs:
       uses: actions/github-script@v6
       with:
         script: |
-            return inputs.services || process.env.SERVICE_NAME;
+            return env.services || process.env.SERVICE_NAME;
+        env:
+          services: ${{ inputs.services }}
 
     - name: initialize default inputs (service)
       id: initEnvironment
       uses: actions/github-script@v6
       with:
         script: |
-            return inputs.environment || process.env.DEPLOYMENT_ENVIRONMENT;
+            return env.environment || process.env.DEPLOYMENT_ENVIRONMENT;
+        env:
+          environment: ${{ inputs.environment }}
           
     - name: extract tag version
       id: semver 
