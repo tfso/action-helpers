@@ -10,6 +10,16 @@ inputs:
     description: Services
     required: false
 
+  githubref:
+      description: Github reference
+      default: ${{ github.ref }}
+      required: false
+
+  regex:
+      description: Semver regex
+      default: 'refs\/tags\/v(.*)$'
+      required: false
+
 outputs:
   version: 
     description: the full version not including 'v', will be prereleased if build is a branch
@@ -19,10 +29,10 @@ outputs:
     value: ${{ steps.semver.outputs.prerelease }}
   environment: 
     description: environment
-    value: ${{ steps.init.outputs.environment }}
+    value: ${{ steps.initEnvironment.outputs.result }}
   services: 
     description: services
-    value: ${{ steps.initServices.outputs.result }}
+    value: ${{ steps.script.outputs.result }}
 
 runs:
   using: 'composite'
@@ -32,25 +42,25 @@ runs:
       uses: actions/github-script@v6
       with:
         script: |
-            return env.services || process.env.SERVICE_NAME;
-        env:
-          services: format('{0}', inputs.services)
-
-    - name: initialize default inputs (service)
+            return process.env.services || process.env.SERVICE_NAME;
+      env:
+        services: ${{ inputs.services }}
+        
+    - name: initialize default inputs (environment)
       id: initEnvironment
       uses: actions/github-script@v6
       with:
         script: |
-            return env.environment || process.env.DEPLOYMENT_ENVIRONMENT;
-        env:
-          environment: format('{0}', inputs.environment)
-          
+            return process.env.environment || process.env.DEPLOYMENT_ENVIRONMENT;
+      env:
+        environment: ${{ inputs.environment }}
+   
     - name: extract tag version
       id: semver 
       uses: booxmedialtd/ws-action-parse-semver@v1.4.7
       with:
-        input_string: ${{ github.ref }}
-        version_extractor_regex: 'refs\/tags\/v(.*)$'
+        input_string: ${{ inputs.githubref }}
+        version_extractor_regex: ${{ inputs.regex }}
 
     - name: extract services
       uses: actions/github-script@v6
@@ -58,12 +68,12 @@ runs:
       with:
         result-encoding: string
         script: |
-          if(/^\s*[\[{][\s\S]*[\]}]\s*$/.test(steps.init.outputs.services)) {
-            return JSON.stringify([].concat(...[JSON.parse(steps.init.outputs.services)]))
+          if(/^\s*[\[{][\s\S]*[\]}]\s*$/.test(${{ steps.initServices.outputs.result }} )) {
+            return JSON.stringify([].concat(...[JSON.parse(${{ steps.initServices.outputs.result }})]))
           }
           else {
             return JSON.stringify(
-              String(steps.init.outputs.services)
+              String(${{ steps.initServices.outputs.result }})
                 .split(/[\n]/i)
                 .filter(line => line.length > 0)
                 .map(line => (
