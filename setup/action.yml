@@ -50,6 +50,7 @@ runs:
       id: initEnvironment
       uses: actions/github-script@v6
       with:
+        result-encoding: string
         script: |
             return process.env.environment || process.env.DEPLOYMENT_ENVIRONMENT;
       env:

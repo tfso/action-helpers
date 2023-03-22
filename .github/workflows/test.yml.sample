@@ -5,6 +5,7 @@ name: Test action-deployment
 on: push
 
 env:
+ DEPLOYMENT_ENVIRONMENT: dev
 jobs:
   my-deployment:
     runs-on: ubuntu-latest
@@ -21,8 +22,8 @@ jobs:
         name: deploy
         id: deploy
         with:
-          githubref: refs/tags/v1.1.199
-          environment: dev
+          githubref: refs/tags/v1.1.199-feat.9
+          environment: ${{ env.DEPLOYMENT_ENVIRONMENT }}
           services: |
             [
               {
