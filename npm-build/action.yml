@@ -137,7 +137,7 @@ runs:
     - shell: bash
       name: version package
       run: |
-        npm version ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }} --no-git-tag-version --ignore-scripts
+        npm version ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }} --no-git-tag-version --allow-same-version --ignore-scripts
     
     - shell: bash
       name: install
