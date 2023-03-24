@@ -7,7 +7,7 @@ inputs:
     required: false
 
   services:
-    description: Services
+    description: Services, initServices defaults to env.SERVICE_NAME
     required: false
 
   githubref:
@@ -37,15 +37,6 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: initialize default inputs (service)
-      id: initServices
-      uses: actions/github-script@v6
-      with:
-        script: |
-            return process.env.services || process.env.SERVICE_NAME;
-      env:
-        services: ${{ inputs.services }}
-        
     - name: initialize default inputs (environment)
       id: initEnvironment
       uses: actions/github-script@v6
@@ -69,12 +60,13 @@ runs:
       with:
         result-encoding: string
         script: |
-          if(/^\s*[\[{][\s\S]*[\]}]\s*$/.test(${{ steps.initServices.outputs.result }} )) {
-            return JSON.stringify([].concat(...[JSON.parse(${{ steps.initServices.outputs.result }})]))
+          var service = process.env.services || process.env.SERVICE_NAME;
+          if(/^\s*[\[{][\s\S]*[\]}]\s*$/.test(service)) {
+            return JSON.stringify([].concat(...[JSON.parse(service)]))
           }
           else {
             return JSON.stringify(
-              String(${{ steps.initServices.outputs.result }})
+              String(service)
                 .split(/[\n]/i)
                 .filter(line => line.length > 0)
                 .map(line => (
@@ -87,3 +79,5 @@ runs:
               ))
             )
           }
+      env:
+        services: ${{ inputs.services }}
