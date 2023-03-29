@@ -1,0 +1,93 @@
+### Github workflow for local test and development 
+### act -W .\.github\workflows\test.yml -v -s GITHUB_TOKEN=##################
+name: Test action-deployment
+
+on: push
+
+env:
+ DEPLOYMENT_ENVIRONMENT: dev
+jobs:
+  setupTest:
+    outputs:
+      version: ${{ steps.deploy.outputs.version }}
+      services: ${{ steps.deploy.outputs.services }}
+      prerelease: ${{ steps.deploy.outputs.prerelease }}
+      environment: ${{ steps.deploy.outputs.environment }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          path: 'action-helper'
+
+      - name: Checkout Github
+        uses: actions/checkout@v2
+        
+      - uses: ./setup
+        name: deploy
+        id: deploy
+        with:
+          githubref: refs/tags/v1.1.199-feat.9
+          environment: ${{ env.DEPLOYMENT_ENVIRONMENT }}
+          services: |
+            [
+              {
+                "name": "Tfso-Worker-ProfileRequest",
+                "datadog": "/worker/i",
+                "port": "",
+                "http-endpoint": "",
+                "env-prefix-remapper": "ENV_WORKER_"
+              },
+              {
+                "name": "Tfso-Api-ProfileRequest",
+                "datadog": "/api/i",
+                "port": "5000",
+                "http-endpoint": "profilerequest.api2.24sevenoffice.com",
+                "env-prefix-remapper": "ENV_API_"
+              }
+            ]
+
+      - name: output
+        run: |
+          echo "Version: $version"
+          echo "Prerelease: $prerelease"
+          echo "Environment: $environment"
+          echo "Services: $services"
+          echo "Conclusion: $conclusions"
+        env:
+         version: ${{ steps.deploy.outputs.version }}
+         services: ${{ steps.deploy.outputs.services }}
+         prerelease: ${{ steps.deploy.outputs.prerelease }}
+         environment: ${{ steps.deploy.outputs.environment }}
+
+  setupChecks:
+    runs-on: ubuntu-latest
+    needs: [setupTest]
+    steps:
+      - id: versioncheck
+        name: Version Check
+        if: ${{ (needs.setupTest.outputs.version != '1.1.199-feat.9') }}
+        run: |
+          echo "Version is not correct ${{ needs.setupTest.outputs.version }}"
+          exit 1
+
+      - id: servicescheck
+        name: Services Check
+        if: ${{ (contains(needs.setupTest.outputs.services, 'Tfso-Api-ProfileRequest') != true) }} 
+        run: |
+          echo "Services is not correct ${{ needs.setupTest.outputs.services }}"
+          exit 1
+  
+      - id: environmentcheck
+        name: Environment Check
+        if: ${{ needs.setupTest.outputs.environment != 'dev' }} 
+        run: |
+          echo "Environment is not correct ${{ needs.setupTest.outputs.environment }}"
+          exit 1
+
+      - id: prereleasecheck
+        name: Prerelease Check
+        if: ${{ needs.setupTest.outputs.prerelease != 'feat.9' }} 
+        run: |
+          echo "Prerelease is not correct ${{ needs.setupTest.outputs.prerelease }}"
+          exit 1
