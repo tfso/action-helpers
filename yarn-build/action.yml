@@ -71,11 +71,12 @@ runs:
         echo "deploy=${{ contains(github.event.head_commit.message, '#deploy_branch') && 'true' || 'false' }}" >> $GITHUB_OUTPUT
 
         if [ $TRUNCATE == "1" ]; then
-          echo "prerelease=$(echo ${{ github.ref_name }} | sed 's/\([a-zA-Z0-9]\+\).*/\1/g')" >> $GITHUB_OUTPUT
+          echo "prerelease=$(echo $REFNAME | sed 's/\([a-zA-Z0-9]\+\).*/\1/g')" >> $GITHUB_OUTPUT
         else
-          echo "prerelease=$(echo ${{ github.ref_name }} | sed 's/[^a-zA-Z0-9]/-/g')" >> $GITHUB_OUTPUT
+          echo "prerelease=$(echo $REFNAME | sed 's/[^a-zA-Z0-9]/-/g')" >> $GITHUB_OUTPUT
         fi
       env:
+        REFNAME: ${{ github.ref_name }}
         TRUNCATE: ${{ contains(inputs.TRUNCATE_PRERELEASE, 'false') && '0' || '1' }}
 
     - shell: bash
