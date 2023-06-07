@@ -1,0 +1,33 @@
+### Github workflow for local test and development 
+### act -W .\.github\workflows\checks-test.yml  -s GITHUB_TOKEN=<token1> -s AUTH_TOKEN=<token2> -s PORT=7047 -s SWAGGERPATH=swagger/v1/swagger.json
+name: Test action-deployment
+
+on: push
+
+env:
+ DEPLOYMENT_ENVIRONMENT: dev
+jobs:
+  setupTest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          path: 'action-helper'
+
+      - name: Checkout Github
+        uses: actions/checkout@v3
+      
+      - name: SchemaCheck
+        uses: ./schema-check
+        with:
+            GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
+            AUTH_TOKEN: ${{ inputs.AUTH_TOKEN }}
+
+      - name: output
+        run: |
+          echo "Version: $inputs.GITHUB_TOKEN"
+          echo "Prerelease: $inputs.AUTH_TOKEN"
+          echo "Environment: $environment"
+          echo "Services: $services"
+          echo "Conclusion: $conclusions"

@@ -1,0 +1,36 @@
+### Github workflow for local test and development 
+### act -W .\.github\workflows\test.yml -v -s GITHUB_TOKEN=##################
+
+name: Schematest
+description: 'Schematest for API using schemathesis'
+
+inputs:
+  GITHUB_TOKEN:
+    description: 'Github Token'
+    required: false
+  AUTH_TOKEN:
+    description: 'Auth Token'
+    required: false
+    default: 'xxxxx'
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.8'
+    - uses: BSFishy/pip-action@v1
+      with:
+        packages: |
+          schemathesis
+
+    - name: Schemacheck
+      id: schemacheck
+      with:
+        GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
+        AUTH_TOKEN: ${{ inputs.AUTH_TOKEN }}
+      run: | 
+         echo "GITHUB_TOKEN: $GITHUB_TOKEN"
+         echo "AUTH_TOKEN: $AUTH_TOKEN"
+         st run -H "Authorization: Bearer $AUTH_TOKEN" https://host.docker.internal:7047/swagger/v1/swagger.json --request-tls-verify=false --checks response_schema_conformance --wait-for-schema=5
