@@ -1,8 +1,24 @@
 ### Github workflow for local test and development 
-### act -W .\.github\workflows\checks-test.yml  -s GITHUB_TOKEN=<token1> -s AUTH_TOKEN=<token2> -s PORT=7047 -s SWAGGERPATH=swagger/v1/swagger.json
+### act -W .\.github\workflows\checks-test.yml  --input GITHUB_TOKEN=<TOKEN> --input SWAGGERPATH=https://host.docker.internal:7005/swagger/v1/swagger.json
+### act -W .\.github\workflows\checks-test.yml  --input GITHUB_TOKEN=<TOKEN> --input AUTH_TOKEN=<TOKEN> --input SWAGGERPATH=https://host.docker.internal:7005/swagger/v1/swagger.json 
 name: Test action-deployment
 
 on: push
+
+inputs:
+  GITHUB_TOKEN:
+    description: 'Github token'
+    required: true
+  AUTH_TOKEN:
+    description: 'Auth token'
+    required: false
+  SWAGGERPATH:
+    description: 'Swagger path'
+    required: true
+  XTFSO_License:
+    description: 'XTFSO License'
+    required: false
+    default: '82cf9f16-8366-48fc-96b0-2f683dea79bc;;'
 
 env:
  DEPLOYMENT_ENVIRONMENT: dev
@@ -18,16 +34,15 @@ jobs:
       - name: Checkout Github
         uses: actions/checkout@v3
       
+      - name: output
+        run: |
+          echo "Running schemathesis on SwaggerPath: ${{ github.event.inputs.SWAGGERPATH }}"
+
       - name: SchemaCheck
         uses: ./schema-check
         with:
-            GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
-            AUTH_TOKEN: ${{ inputs.AUTH_TOKEN }}
-
-      - name: output
-        run: |
-          echo "Version: $inputs.GITHUB_TOKEN"
-          echo "Prerelease: $inputs.AUTH_TOKEN"
-          echo "Environment: $environment"
-          echo "Services: $services"
-          echo "Conclusion: $conclusions"
+            GITHUB_TOKEN: ${{ github.event.inputs.GITHUB_TOKEN }}
+            AUTH_TOKEN: ${{ github.event.inputs.AUTH_TOKEN }}
+            SWAGGERPATH: ${{ github.event.inputs.SWAGGERPATH }}
+            XTFSO_License: ${{ github.event.inputs.XTFSO_License }}
+        
