@@ -114,7 +114,7 @@ runs:
         echo "pre_tag=$pre_tag" >> $GITHUB_OUTPUT
       env:
         prerelease: ${{ steps.branch.outputs.prerelease }}
-        initial_version: ${{ inputs.MAJOR && format('{0}.0.0', inputs.MAJOR) || env.INITIAL_VERSION }}
+        initial_version: ${{ inputs.MAJOR && format('{0}.0.0', inputs.MAJOR) || inputs.INITIAL_VERSION }}
         major: ${{ inputs.MAJOR && format('v?{0}', inputs.MAJOR) || 'v?[0-9]+'  }}
 
     - shell: bash
@@ -165,7 +165,7 @@ runs:
       env:
         tag: ${{ steps.latest_tag.outputs.tag }}
         pre_tag: ${{ steps.latest_tag.outputs.pre_tag }}
-        initial_version: ${{ inputs.MAJOR && format('{0}.0.0', inputs.MAJOR) || env.INITIAL_VERSION }}
+        initial_version: ${{ inputs.MAJOR && format('{0}.0.0', inputs.MAJOR) || inputs.INITIAL_VERSION }}
         semver_arg_major: ${{ inputs.MAJOR && 'minor' || 'major' }}
         default_semvar_bump: ${{ inputs.DEFAULT_BUMP }}
         with_v: ${{ contains(inputs.WITH_V, 'true') && 'v' || '' }}
