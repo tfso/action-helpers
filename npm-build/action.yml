@@ -76,11 +76,12 @@ runs:
         echo "deploy=${{ contains(github.event.head_commit.message, '#deploy_branch') && 'true' || 'false' }}" >> $GITHUB_OUTPUT
 
         if [ $TRUNCATE == "1" ]; then
-          echo "prerelease=$(echo ${{ github.ref_name }} | sed 's/\([a-zA-Z0-9]\+\).*/\1/g')" >> $GITHUB_OUTPUT
+          echo "prerelease=$(echo $REFNAME | sed 's/\([a-zA-Z0-9]\+\).*/\1/g')" >> $GITHUB_OUTPUT
         else
-          echo "prerelease=$(echo ${{ github.ref_name }} | sed 's/[^a-zA-Z0-9]/-/g')" >> $GITHUB_OUTPUT
+          echo "prerelease=$(echo $REFNAME | sed 's/[^a-zA-Z0-9]/-/g')" >> $GITHUB_OUTPUT
         fi
       env:
+        REFNAME: ${{ github.ref_name }}
         TRUNCATE: ${{ contains(inputs.TRUNCATE_PRERELEASE, 'false') && '0' || '1' }}
 
     - shell: bash
@@ -137,7 +138,7 @@ runs:
     - shell: bash
       name: version package
       run: |
-        npm version ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }} --no-git-tag-version --ignore-scripts
+        npm version ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }} --no-git-tag-version --allow-same-version --ignore-scripts
     
     - shell: bash
       name: install
