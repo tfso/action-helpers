@@ -1,4 +1,5 @@
 ### Github workflow for local test and development 
+### Rename to remove .example, and update the file with your own values
 ### act -W .\.github\workflows\checks-test.yml  --input GITHUB_TOKEN=<TOKEN> --input SWAGGERPATH=https://host.docker.internal:7005/swagger/v1/swagger.json
 ### act -W .\.github\workflows\checks-test.yml  --input GITHUB_TOKEN=<TOKEN> --input AUTH_TOKEN=<TOKEN> --input SWAGGERPATH=https://host.docker.internal:7005/swagger/v1/swagger.json 
 name: Test action-deployment
