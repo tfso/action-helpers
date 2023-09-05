@@ -29,7 +29,7 @@ jobs:
 
       - name: Build and Push to ECR
         id: ecr
-        uses: "./.github/actions/build-and-push-ecr"
+        uses: tfso/action-helpers/build-and-push-ecr@v1
         with:
           dev_account_id: 111 # This should be your workloads _dev_ account
           ecr_account_id: ${{ env.CENTRAL_ECR_REPOSITORY_ACCOUNT_ID }}
