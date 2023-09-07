@@ -31,7 +31,6 @@ jobs:
         id: ecr
         uses: tfso/action-helpers/build-and-push-ecr@v1
         with:
-          dev_account_id: 111 # This should be your workloads _dev_ account
           ecr_account_id: ${{ env.CENTRAL_ECR_REPOSITORY_ACCOUNT_ID }}
           workload_name: apiworker-example
           image_name: api-example
