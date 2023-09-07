@@ -43,6 +43,5 @@ jobs:
       - name: Display Outputs
         run: |
           echo "Image URI: ${{ steps.ecr.outputs.image_uri }}"
-          echo "Image Tag: ${{ steps.ecr.outputs.image_tag }}"
 
 ```
