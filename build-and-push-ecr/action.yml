@@ -76,7 +76,7 @@ runs:
         aws ecr create-repository \
         --image-tag-mutability IMMUTABLE \
         --repository-name ${{ steps.env.outputs.repository_prefix }}${{ inputs.workload_name }}/${{ inputs.image_name }} \
-        --tags Key=team,Value=${{ inputs.team }} Key=service,Value=${{ inputs.service }} Key=account-id,Value=${{ inputs.dev_account_id }} || true
+        --tags Key=team,Value=${{ inputs.team }} Key=service,Value=${{ inputs.service }} || true
 
     - name: Login to Amazon ECR
       uses: aws-actions/amazon-ecr-login@v1
