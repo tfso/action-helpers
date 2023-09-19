@@ -1,0 +1,103 @@
+name: "Build and Push to ECR"
+description: "Action to build and push Docker image to ECR using OIDC"
+inputs:
+  ecr_account_id:
+    description: "AWS ECR Account ID"
+    required: true
+  workload_name:
+    description: "Name of the AWS workload"
+    required: true
+  image_name:
+    description: "Docker Image Name"
+    required: true
+  team:
+    description: "TFSO team name"
+    required: true
+  service:
+    description: "Name of the service the image belongs to"
+    required: true
+  context:
+    description: "Build context"
+    required: false
+    default: "."
+  file:
+    description: "Which Dockerfile to run"
+    required: false
+    default: "Dockerfile"
+  push:
+    description: "Should image be pushed to ECR registry"
+    required: false
+    default: true
+  review:
+    description: "Will prefix image with `review-` if true, prefixed to `-prod` if not."
+    required: false
+    default: false
+  tag:
+    description: "Tag for the Docker image"
+    required: true
+outputs:
+  image_uri:
+    description: 'The full image name that was pushed'
+    value: "${{ steps.login-ecr.outputs.registry }}/${{ steps.env.outputs.repository_prefix }}${{ inputs.workload_name }}/${{ inputs.image_name }}:${{ inputs.tag }}"
+  image_tag:
+    description: 'Image tag'
+    value: "${{ inputs.tag }}"
+  repository_arn:
+    description: 'The unique amazon resource name of the repository'
+    value: "arn:aws:ecr:eu-west-1:${{ inputs.ecr_account_id }}:${{ steps.env.outputs.repository_prefix }}${{ inputs.workload_name }}/${{ inputs.image_name }}"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Cache Docker layers
+      uses: actions/cache@v2
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-
+          
+    - name: Determine env
+      id: env
+      shell: bash
+      run: |
+        echo "role_postfix=$(if [ "${{ inputs.review }}" == true ]; then echo "-review"; else echo "-prod"; fi)" >> $GITHUB_OUTPUT
+        echo "repository_prefix=$(if [ "${{ inputs.review }}" == true ]; then echo "review-"; else echo ""; fi)" >> $GITHUB_OUTPUT
+
+    - name: Configure AWS credentials for Dev
+      uses: aws-actions/configure-aws-credentials@v3
+      with:
+        role-to-assume: arn:aws:iam::${{ inputs.ecr_account_id }}:role/ecr-${{ inputs.workload_name }}${{ steps.env.outputs.role_postfix }}
+        aws-region: eu-west-1
+        role-session-name: GitHubActionsCICD
+        role-duration-seconds: 3600
+
+    # Create ECR repository (or ignore error if already created)
+    - name: Create or Find ECR Repository
+      shell: bash
+      run: |
+        aws ecr create-repository \
+        --image-tag-mutability IMMUTABLE \
+        --repository-name ${{ steps.env.outputs.repository_prefix }}${{ inputs.workload_name }}/${{ inputs.image_name }} \
+        --tags Key=team,Value=${{ inputs.team }} Key=service,Value=${{ inputs.service }} || true
+
+    - name: Login to Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v1
+      id: login-ecr
+      with:
+        mask-password: "true"
+        registries: "${{ inputs.ecr_account_id }}"
+
+    - name: Build and Push Docker Image
+      uses: docker/build-push-action@v4
+      with:
+        context: ${{ inputs.context }}
+        file: ${{ inputs.file }}
+        push: ${{ inputs.push }}
+        tags: ${{ steps.login-ecr.outputs.registry }}/${{ steps.env.outputs.repository_prefix }}${{ inputs.workload_name }}/${{ inputs.image_name }}:${{ inputs.tag }}
+        cache-from: type=local,src=/tmp/.buildx-cache
+        cache-to: type=local,dest=/tmp/.buildx-cache
+        provenance: false
