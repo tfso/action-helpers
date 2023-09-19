@@ -43,5 +43,7 @@ jobs:
       - name: Display Outputs
         run: |
           echo "Image URI: ${{ steps.ecr.outputs.image_uri }}"
+          echo "Image tag: ${{ steps.ecr.outputs.image_tag }}"
+          echo "Repository ARN: ${{ steps.ecr.outputs.repository_arn }}"
 
 ```

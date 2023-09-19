@@ -39,6 +39,12 @@ outputs:
   image_uri:
     description: 'The full image name that was pushed'
     value: "${{ steps.login-ecr.outputs.registry }}/${{ inputs.workload_name }}/${{ inputs.image_name }}:${{ inputs.tag }}"
+  image_tag:
+    description: 'Image tag'
+    value: "${{ inputs.tag }}"
+  repository_arn:
+    description: 'The unique amazon resource name of the repository'
+    value: "arn:aws:ecr:eu-west-1:${{  }}:${{ inputs.workload_name }}/${{ inputs.image_name }}"
 
 runs:
   using: "composite"
