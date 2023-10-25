@@ -1,0 +1,158 @@
+name: 'Build npm package using yarn v4'
+
+inputs:
+  GITHUB_TOKEN:
+    description: access to current github repository
+    required: true
+  GITHUB_GLOBAL_TOKEN:
+    description: access to github repositories for legacy packages
+    required: false
+  NPM_TOKEN:
+    description: access token to @tfso NPM registry
+    required: false
+  FONT_AWESOME_TOKEN:
+    description: access token to fortawesome NPM registry
+    required: false
+  DEFAULT_BUMP: 
+    description: may be major, minor or patch, defaults to patch
+    required: false
+    default: 'patch'
+  INITIAL_VERSION:
+    description: initial version, nice if migrating from other build platforms
+    required: false
+  CUSTOM_TAG:
+    description: Set a custom tag, useful when generating tag based on f.ex FROM image in a docker image. Setting this tag will invalidate any other settings set!
+    required: false
+  NODE_VERSION: 
+    description: node version, defaults to 18
+    required: false
+    default: '18'
+  PRUNE_PRODUCTION:
+    description: prune for production
+    required: false
+    default: true
+  TRUNCATE_PRERELEASE:
+    description: truncate branchname to first word
+    required: false
+    default: false
+
+outputs:
+  version: 
+    description: the full version including 'v', will be prereleased if build is a branch
+    value: v${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }}
+  prerelease: 
+    description: prerelease suffix for PR builds and will truncate branchname to first word ('feature/my-feature' will be 'feature') unless TRUNCATE_PRERELEASE is set to `false`
+    value: ${{ steps.branch.outputs.prerelease }}
+  deploy: 
+    description: always 'true' if main branch, and always 'false' for other branchers except if a commit contains '#deploy_branch'
+    value: ${{ steps.branch.outputs.deploy == 'false' && 'false' || 'true' }}
+
+runs:
+  using: 'composite'     
+  steps: 
+    - name: setup
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ inputs.NODE_VERSION }}
+     
+    - uses: actions/cache@v3
+      with:
+        path: .yarn/cache
+        key: yarn2-${{ hashFiles('yarn.lock') }}
+        restore-keys: |
+          yarn2-
+
+    - shell: bash
+      id: branch
+      if: github.ref != format('refs/heads/{0}', github.event.repository.default_branch)
+      name: gather branch information
+      run: |
+        echo "deploy=${{ contains(github.event.head_commit.message, '#deploy_branch') && 'true' || 'false' }}" >> $GITHUB_OUTPUT
+
+        if [ $TRUNCATE == "1" ]; then
+          echo "prerelease=$(echo $REFNAME | sed 's/\([a-zA-Z0-9]\+\).*/\1/g')" >> $GITHUB_OUTPUT
+        else
+          echo "prerelease=$(echo $REFNAME | sed 's/[^a-zA-Z0-9]/-/g')" >> $GITHUB_OUTPUT
+        fi
+      env:
+        REFNAME: ${{ github.ref_name }}
+        TRUNCATE: ${{ contains(inputs.TRUNCATE_PRERELEASE, 'false') && '0' || '1' }}
+
+    - shell: bash
+      name: git access
+      if: inputs.GITHUB_GLOBAL_TOKEN
+      run: |
+        git config --global url."https://".insteadOf "git://"
+        git config --global url."https://api:${ACCESS_TOKEN}@github.com/".insteadOf "https://github.com/"
+        git config --global url."https://ssh:${ACCESS_TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
+        git config --global url."https://git:${ACCESS_TOKEN}@github.com/".insteadOf "git@github.com:"
+      env: 
+        ACCESS_TOKEN: ${{ inputs.GITHUB_GLOBAL_TOKEN }}
+
+    - shell: bash
+      name: npm access token
+      if: inputs.NPM_TOKEN
+      run: |
+        yarn config set npmScopes.tfso.npmRegistryServer "https://npm.pkg.github.com"
+        yarn config set npmScopes.tfso.npmAlwaysAuth true
+        yarn config set npmScopes.tfso.npmAuthToken ${NPM_TOKEN}
+      env:
+        NPM_TOKEN: ${{ inputs.NPM_TOKEN }}
+
+    - shell: bash
+      name: npm access token
+      if: inputs.FONT_AWESOME_TOKEN
+      run: |
+        yarn config set npmScopes.fortawesome.npmRegistryServer "https://npm.fontawesome.com"
+        yarn config set npmScopes.fortawesome.npmAlwaysAuth true
+        yarn config set npmScopes.fortawesome.npmAuthToken ${NPM_TOKEN}
+      env: 
+        NPM_TOKEN: ${{ inputs.FONT_AWESOME_TOKEN }}
+
+    - name: create version
+      if: inputs.CUSTOM_TAG == ''
+      id: semver
+      uses: anothrNick/github-tag-action@1.36.0
+      env:
+        GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
+        INITIAL_VERSION: ${{ inputs.INITIAL_VERSION }}
+        DEFAULT_BUMP: ${{ inputs.DEFAULT_BUMP }}
+        PRERELEASE_SUFFIX: ${{ steps.branch.outputs.prerelease }}
+        WITH_V: false
+        DRY_RUN: true
+
+    - shell: bash
+      name: fix custom version/tag
+      if: inputs.CUSTOM_TAG
+      id: custom
+      run: |
+        echo "new_tag=$(echo $CUSTOM_TAG | sed 's/v\?\(.*\)/\1/g')" >> $GITHUB_OUTPUT
+        echo $CUSTOM_TAG | sed 's/v\?\(.*\)/\1/g'
+      env:
+        CUSTOM_TAG: ${{ inputs.CUSTOM_TAG }}
+
+    - shell: bash
+      name: version package
+      run: |
+        yarn version ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }} -i -d
+
+    - shell: bash
+      name: install
+      run: |
+        yarn
+
+    - shell: bash
+      name: build
+      run: |
+        yarn run build
+
+    - shell: bash
+      name: tests
+      run: |
+        yarn test
+
+    - shell: bash
+      name: clean up
+      if: inputs.PRUNE_PRODUCTION == 'true'
+      run: |
+        yarn workspaces focus
