@@ -135,13 +135,17 @@ runs:
     - shell: bash
       name: version package
       run: |
-        npm pkg set version="$CUSTOM_TAG"
+        npm pkg set version="$VERSION"
+      env: 
+        VERSION: ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }}
 
     - shell: bash
       name: version workspace packages if present
       continue-on-error: true
       run: |
-        npm pkg set version="$CUSTOM_TAG" --workspaces
+        npm pkg set version="$VERSION" --workspaces
+      env: 
+        VERSION: ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }}
 
     - shell: bash
       name: install
