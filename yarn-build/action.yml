@@ -144,6 +144,8 @@ runs:
       name: build
       run: |
         yarn run build
+      env: 
+        npm_package_version: ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }}
 
     - shell: bash
       name: tests
