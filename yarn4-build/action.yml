@@ -24,9 +24,9 @@ inputs:
     description: Set a custom tag, useful when generating tag based on f.ex FROM image in a docker image. Setting this tag will invalidate any other settings set!
     required: false
   NODE_VERSION: 
-    description: node version, defaults to 18
+    description: node version, defaults to 20
     required: false
-    default: '18'
+    default: '20'
   PRUNE_PRODUCTION:
     description: prune for production
     required: false
@@ -134,7 +134,7 @@ runs:
     - shell: bash
       name: version package
       run: |
-        yarn version ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }} -i -d
+        yarn workspaces foreach -A version ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }}
 
     - shell: bash
       name: install
