@@ -134,9 +134,14 @@ runs:
 
     - shell: bash
       name: version package
-      if: inputs.WRITE_PACKAGEVERSION
       run: |
-        yarn version --new-version ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }} --no-git-tag-version --no-commit-hooks
+        npm pkg set version="$CUSTOM_TAG"
+
+    - shell: bash
+      name: version workspace packages if present
+      continue-on-error: true
+      run: |
+        npm pkg set version="$CUSTOM_TAG" --workspaces
 
     - shell: bash
       name: install
