@@ -35,6 +35,8 @@ inputs:
     description: truncate branchname to first word
     required: false
     default: false
+  WRITE_PACKAGEVERSION: 
+    default: true
 
 outputs:
   version: 
@@ -51,14 +53,14 @@ runs:
   using: 'composite'     
   steps: 
     - name: checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         token: ${{ inputs.GITHUB_TOKEN }}
         fetch-depth: '0' # important for versioning
         persist-credentials: false # important for legacy github packages
 
     - name: setup
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.NODE_VERSION }}
         cache: 'yarn'
@@ -133,7 +135,17 @@ runs:
     - shell: bash
       name: version package
       run: |
-        yarn version --new-version ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }} --no-git-tag-version --no-commit-hooks
+        npm pkg set version="$VERSION"
+      env: 
+        VERSION: ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }}
+
+    - shell: bash
+      name: version workspace packages if present
+      continue-on-error: true
+      run: |
+        npm pkg set version="$VERSION" --workspaces
+      env: 
+        VERSION: ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }}
 
     - shell: bash
       name: install
@@ -144,6 +156,8 @@ runs:
       name: build
       run: |
         yarn run build
+      env: 
+        VITE_BUILD_VERSION: ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }}
 
     - shell: bash
       name: tests
