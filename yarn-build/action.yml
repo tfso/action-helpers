@@ -35,123 +35,53 @@ inputs:
     description: truncate branchname to first word
     required: false
     default: false
+  YARN_VERSION:
+    description: yarn version, defaults to 1
+    required: false
+    default: '1'
 
 outputs:
   version: 
     description: the full version including 'v', will be prereleased if build is a branch
-    value: v${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }}
+    value: v${{ steps.yarn-1.outputs.version || steps.yarn-4.outputs.version }}
   prerelease: 
     description: prerelease suffix for PR builds and will truncate branchname to first word ('feature/my-feature' will be 'feature') unless TRUNCATE_PRERELEASE is set to `false`
-    value: ${{ steps.branch.outputs.prerelease }}
+    value: ${{ steps.yarn-1.outputs.prerelease || steps.yarn-4.outputs.prerelease }}
   deploy: 
     description: always 'true' if main branch, and always 'false' for other branchers except if a commit contains '#deploy_branch'
-    value: ${{ steps.branch.outputs.deploy == 'false' && 'false' || 'true' }}
+    value: ${{ steps.yarn-1.outputs.deploy || steps.yarn-4.outputs.deploy }}
 
 runs:
   using: 'composite'     
   steps: 
-    - name: checkout
-      uses: actions/checkout@v3
+    - name: yarn 1
+      id: yarn-1
+      if: inputs.YARN_VERSION == 1
+      uses: ./one
       with:
-        token: ${{ inputs.GITHUB_TOKEN }}
-        fetch-depth: '0' # important for versioning
-        persist-credentials: false # important for legacy github packages
-
-    - name: setup
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ inputs.NODE_VERSION }}
-        cache: 'yarn'
-
-    - shell: bash
-      id: branch
-      if: github.ref != format('refs/heads/{0}', github.event.repository.default_branch)
-      name: gather branch information
-      run: |
-        echo "deploy=${{ contains(github.event.head_commit.message, '#deploy_branch') && 'true' || 'false' }}" >> $GITHUB_OUTPUT
-
-        if [ $TRUNCATE == "1" ]; then
-          echo "prerelease=$(echo $REFNAME | sed 's/\([a-zA-Z0-9]\+\).*/\1/g')" >> $GITHUB_OUTPUT
-        else
-          echo "prerelease=$(echo $REFNAME | sed 's/[^a-zA-Z0-9]/-/g')" >> $GITHUB_OUTPUT
-        fi
-      env:
-        REFNAME: ${{ github.ref_name }}
-        TRUNCATE: ${{ contains(inputs.TRUNCATE_PRERELEASE, 'false') && '0' || '1' }}
-
-    - shell: bash
-      name: git access
-      if: inputs.GITHUB_GLOBAL_TOKEN
-      run: |
-        git config --global url."https://".insteadOf "git://"
-        git config --global url."https://api:${ACCESS_TOKEN}@github.com/".insteadOf "https://github.com/"
-        git config --global url."https://ssh:${ACCESS_TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
-        git config --global url."https://git:${ACCESS_TOKEN}@github.com/".insteadOf "git@github.com:"
-      env: 
-        ACCESS_TOKEN: ${{ inputs.GITHUB_GLOBAL_TOKEN }}
-
-    - shell: bash
-      name: npm access token
-      if: inputs.NPM_TOKEN
-      run: |
-        npm config set @tfso:registry=https://npm.pkg.github.com --userconfig .npmrc
-        npm config set //npm.pkg.github.com/:_authToken=${NPM_TOKEN} --userconfig .npmrc
-      env:
-        NPM_TOKEN: ${{ inputs.NPM_TOKEN }}
-
-    - shell: bash
-      name: npm access token
-      if: inputs.FONT_AWESOME_TOKEN
-      run: |
-        npm config set @fortawesome:registry=https://npm.fontawesome.com/ --userconfig .npmrc
-        npm config set //npm.fontawesome.com/:_authToken=${NPM_TOKEN} --userconfig .npmrc
-      env: 
-        NPM_TOKEN: ${{ inputs.FONT_AWESOME_TOKEN }}
-
-    - name: create version
-      if: inputs.CUSTOM_TAG == ''
-      id: semver
-      uses: anothrNick/github-tag-action@1.36.0
-      env:
         GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
-        INITIAL_VERSION: ${{ inputs.INITIAL_VERSION }}
+        GITHUB_GLOBAL_TOKEN: ${{ inputs.GITHUB_GLOBAL_TOKEN }}
+        NPM_TOKEN: ${{ inputs.NPM_TOKEN }}
+        FONT_AWESOME_TOKEN: ${{ inputs.FONT_AWESOME_TOKEN }}
         DEFAULT_BUMP: ${{ inputs.DEFAULT_BUMP }}
-        PRERELEASE_SUFFIX: ${{ steps.branch.outputs.prerelease }}
-        WITH_V: false
-        DRY_RUN: true
-
-    - shell: bash
-      name: fix custom version/tag
-      if: inputs.CUSTOM_TAG
-      id: custom
-      run: |
-        echo "new_tag=$(echo $CUSTOM_TAG | sed 's/v\?\(.*\)/\1/g')" >> $GITHUB_OUTPUT
-        echo $CUSTOM_TAG | sed 's/v\?\(.*\)/\1/g'
-      env:
+        INITIAL_VERSION: ${{ inputs.INITIAL_VERSION }}
         CUSTOM_TAG: ${{ inputs.CUSTOM_TAG }}
+        NODE_VERSION: ${{ inputs.NODE_VERSION }}
+        PRUNE_PRODUCTION: ${{ inputs.PRUNE_PRODUCTION }}
+        TRUNCATE_PRERELEASE: ${{ inputs.TRUNCATE_PRERELEASE }}
 
-    - shell: bash
-      name: version package
-      run: |
-        yarn version --new-version ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }} --no-git-tag-version --no-commit-hooks
-
-    - shell: bash
-      name: install
-      run: |
-        yarn install --frozen-lockfile
-
-    - shell: bash
-      name: build
-      run: |
-        yarn run build
-
-    - shell: bash
-      name: tests
-      run: |
-        yarn test
-
-    - shell: bash
-      name: clean up
-      if: inputs.PRUNE_PRODUCTION == 'true'
-      run: |
-        yarn install --production
+    - name: yarn 4
+      id: yarn-4
+      if: inputs.YARN_VERSION == 4
+      uses: ./four
+      with:
+        GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
+        GITHUB_GLOBAL_TOKEN: ${{ inputs.GITHUB_GLOBAL_TOKEN }}
+        NPM_TOKEN: ${{ inputs.NPM_TOKEN }}
+        FONT_AWESOME_TOKEN: ${{ inputs.FONT_AWESOME_TOKEN }}
+        DEFAULT_BUMP: ${{ inputs.DEFAULT_BUMP }}
+        INITIAL_VERSION: ${{ inputs.INITIAL_VERSION }}
+        CUSTOM_TAG: ${{ inputs.CUSTOM_TAG }}
+        NODE_VERSION: ${{ inputs.NODE_VERSION }}
+        PRUNE_PRODUCTION: ${{ inputs.PRUNE_PRODUCTION }}
+        TRUNCATE_PRERELEASE: ${{ inputs.TRUNCATE_PRERELEASE }}
