@@ -57,7 +57,7 @@ runs:
     - name: yarn 1
       id: yarn-1
       if: inputs.YARN_VERSION == 1
-      uses: ./one
+      uses: tfso/action-helpers/yarn-build/one@3407226e8d2f2918de225fd4e3f0b8ec1d112c80
       with:
         GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
         GITHUB_GLOBAL_TOKEN: ${{ inputs.GITHUB_GLOBAL_TOKEN }}
@@ -73,7 +73,7 @@ runs:
     - name: yarn 4
       id: yarn-4
       if: inputs.YARN_VERSION == 4
-      uses: ./four
+      uses: tfso/action-helpers/yarn-build/four@3407226e8d2f2918de225fd4e3f0b8ec1d112c80
       with:
         GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
         GITHUB_GLOBAL_TOKEN: ${{ inputs.GITHUB_GLOBAL_TOKEN }}
