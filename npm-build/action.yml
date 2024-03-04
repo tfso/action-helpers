@@ -39,6 +39,10 @@ inputs:
     description: include submodules at checkout
     required: false
     default: false
+  VERSION_WORKSPACE_PACKAGES:
+    description: will update version on packages in workspace if set to true
+    default: false
+    required: false
 
 outputs:
   version: 
@@ -139,7 +143,13 @@ runs:
       name: version package
       run: |
         npm version ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }} --no-git-tag-version --allow-same-version --ignore-scripts
-    
+
+    - shell: bash
+      if: inputs.VERSION_WORKSPACE_PACKAGES
+      name: version workspace
+      run: |
+        npm version ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }} --no-git-tag-version --allow-same-version --ignore-scripts --workspaces
+  
     - shell: bash
       name: install
       run: |
