@@ -136,6 +136,14 @@ runs:
         yarn version --new-version ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }} --no-git-tag-version --no-commit-hooks
 
     - shell: bash
+      name: version workspaces
+      run: |
+        workspaces=$(npm pkg get workspaces)
+        if [[ $workspaces != "{}" ]]; then
+          npm pkg set version=$(npm pkg get version) --workspaces --json        
+        fi
+
+    - shell: bash
       name: install
       run: |
         yarn install --frozen-lockfile
