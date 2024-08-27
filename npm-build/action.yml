@@ -24,9 +24,9 @@ inputs:
     description: Set a custom tag, useful when generating tag based on f.ex FROM image in a docker image. Setting this tag will invalidate any other settings set!
     required: false
   NODE_VERSION: 
-    description: node version, defaults to 14
+    description: node version, defaults to 18
     required: false
-    default: '14'
+    default: '18'
   PRUNE_PRODUCTION:
     description: prune for production
     required: false
