@@ -19,7 +19,7 @@ runs:
   steps:
     - if: ${{ inputs.message }}
       name: create annotated tag
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         github-token: ${{ inputs.GITHUB_TOKEN || env.GITHUB_TOKEN || github.token }}
         script: |
@@ -43,7 +43,7 @@ runs:
         message: ${{ inputs.message }}
     
     - name: create ref
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         github-token: ${{ inputs.GITHUB_TOKEN || env.GITHUB_TOKEN || github.token }}
         script: |
