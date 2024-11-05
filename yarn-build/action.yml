@@ -24,9 +24,9 @@ inputs:
     description: Set a custom tag, useful when generating tag based on f.ex FROM image in a docker image. Setting this tag will invalidate any other settings set!
     required: false
   NODE_VERSION: 
-    description: node version, defaults to 14
+    description: node version, defaults to 18
     required: false
-    default: '14'
+    default: '18'
   PRUNE_PRODUCTION:
     description: prune for production
     required: false
@@ -134,6 +134,14 @@ runs:
       name: version package
       run: |
         yarn version --new-version ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }} --no-git-tag-version --no-commit-hooks
+
+    - shell: bash
+      name: version workspaces
+      run: |
+        workspaces=$(npm pkg get workspaces)
+        if [[ $workspaces != "{}" ]]; then
+          npm pkg set version=$(npm pkg get version) --workspaces --json        
+        fi
 
     - shell: bash
       name: install
