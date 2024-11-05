@@ -16,12 +16,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           path: 'action-helper'
 
       - name: Checkout Github
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         
       - uses: ./setup
         name: deploy

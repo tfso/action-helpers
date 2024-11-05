@@ -39,7 +39,7 @@ runs:
   steps:
     - name: initialize default inputs (environment)
       id: initEnvironment
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         result-encoding: string
         script: |
@@ -55,7 +55,7 @@ runs:
         version_extractor_regex: ${{ inputs.regex }}
 
     - name: extract services
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       id: script
       with:
         result-encoding: string

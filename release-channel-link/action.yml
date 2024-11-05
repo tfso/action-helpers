@@ -19,7 +19,7 @@ runs:
       id: branch
       run: echo "clean_title=$(echo ${{ github.head_ref }} | sed 's/[^a-zA-Z0-9]/-/g')" >> $GITHUB_OUTPUT
 
-    - uses: actions/github-script@v6
+    - uses: actions/github-script@v7
       name: Create comment
       env:
         RELEASE_CHANNEL_BASE_URI: ${{ inputs.base-url }}

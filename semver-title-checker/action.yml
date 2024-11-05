@@ -3,7 +3,7 @@ description: 'Validates if a PR title ends with a hint on how to version on merg
 runs:
   using: "composite"
   steps:
-    - uses: actions/github-script@v6
+    - uses: actions/github-script@v7
       name: Check title
       with:
         script: |
