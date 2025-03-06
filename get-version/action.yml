@@ -61,7 +61,7 @@ outputs:
     value: ${{ steps.tag.outputs.part }}
   prerelease:
     description: Prerelease suffix
-    value: ${{ steps.branch.outputs.prerelease }}
+    value: ${{ contains(steps.tag.outputs.is_prerelease, '1') && steps.branch.outputs.prerelease || '' }}
   is_prerelease:
     description: Is version a prerelease? 
     value: ${{ contains(steps.tag.outputs.is_prerelease, '1') && 'true' || 'false' }}
