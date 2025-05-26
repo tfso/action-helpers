@@ -115,8 +115,8 @@ runs:
           pre_tag=$(echo $pre_taglist | sed 's/\s/\n/g' | grep $semver_pre_tag)
         fi
 
-        output_tag = $(echo "$tag" | sed 's/\n//g')
-        output_pre_tag = $(echo "$pre_tag" | sed 's/\n//g')
+        output_tag=$(echo "$tag" | sed 's/\n//g')
+        output_pre_tag=$(echo "$pre_tag" | sed 's/\n//g')
 
         echo "tag before: $tag"
         echo "tag after: $output_tag"
