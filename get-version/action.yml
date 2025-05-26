@@ -103,10 +103,14 @@ runs:
       run: |
         taglist=$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^$major\.[0-9]+\.[0-9]+$" || echo "" | xargs)
       
+        echo "taglist: $taglist"
+
         if [[ -n "${taglist/[ ]*\n/}" ]]; then
           semver_tag=$(semver $taglist | tail -n 1)
-          tag=$(echo $taglist | sed 's/\s/\n/g' | grep $semver_tag)
+          tag=$(echo $taglist | sed 's/\s/\n/g' | grep "v$semver_tag")
         fi
+
+        echo "semver_tag: $semver_tag"
 
         pre_taglist=$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^$major\.[0-9]+\.[0-9]+(-$prerelease\.[0-9]+)$" || echo "" | xargs)
         
