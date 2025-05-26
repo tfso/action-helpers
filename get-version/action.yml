@@ -115,8 +115,8 @@ runs:
           pre_tag=$(echo $pre_taglist | sed 's/\s/\n/g' | grep $semver_pre_tag)
         fi
 
-        echo "tag=$(echo "$tag" | tr -d '\n')" >> $GITHUB_OUTPUT
-        echo "pre_tag=$(echo "$pre_tag" | tr -d '\n')" >> $GITHUB_OUTPUT
+        echo "tag=$(echo "$tag" | sed "s/\n//g")" >> $GITHUB_OUTPUT
+        echo "pre_tag=$(echo "$pre_tag" | sed "s/\n//g")" >> $GITHUB_OUTPUT
       env:
         prerelease: ${{ steps.branch.outputs.prerelease }}
         initial_version: ${{ inputs.MAJOR && format('{0}.0.0', inputs.MAJOR) || inputs.INITIAL_VERSION }}
