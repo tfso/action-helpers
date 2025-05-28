@@ -64,6 +64,15 @@ runs:
         cache: 'yarn'
 
     - shell: bash
+      id: yarn
+      name: detect yarn major version
+      run: |
+        yarn_version=$(yarn --version)
+        yarn_major=$(echo "$yarn_version" | cut -d. -f1)
+        echo "Detected yarn version: $yarn_version"
+        echo "version=$yarn_major" >> $GITHUB_OUTPUT
+
+    - shell: bash
       id: branch
       if: github.ref != format('refs/heads/{0}', github.event.repository.default_branch)
       name: gather branch information
@@ -131,9 +140,16 @@ runs:
         CUSTOM_TAG: ${{ inputs.CUSTOM_TAG }}
 
     - shell: bash
-      name: version package
+      name: version package using yarn 1
+      if: steps.yarn.outputs.version == '1'
       run: |
         yarn version --new-version ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }} --no-git-tag-version --no-commit-hooks
+
+    - shell: bash
+      name: version package using yarn 4
+      if: steps.yarn.outputs.version == '1'
+      run: |
+        yarn version ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }}
 
     - shell: bash
       name: version workspaces
