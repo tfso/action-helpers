@@ -112,6 +112,10 @@ runs:
       run: |
         npm config set @tfso:registry=https://npm.pkg.github.com --userconfig .npmrc
         npm config set //npm.pkg.github.com/:_authToken=${NPM_TOKEN} --userconfig .npmrc
+
+        yarn config set npmScopes.tfso.npmRegistryServer "https://npm.pkg.github.com"
+        yarn config set npmScopes.tfso.npmAlwaysAuth true
+        yarn config set npmScopes.tfso.npmAuthToken ${NPM_TOKEN}
       env:
         NPM_TOKEN: ${{ inputs.NPM_TOKEN }}
 
@@ -121,6 +125,10 @@ runs:
       run: |
         npm config set @fortawesome:registry=https://npm.fontawesome.com/ --userconfig .npmrc
         npm config set //npm.fontawesome.com/:_authToken=${NPM_TOKEN} --userconfig .npmrc
+
+        yarn config set npmScopes.fortawesome.npmRegistryServer "https://npm.fontawesome.com"
+        yarn config set npmScopes.fortawesome.npmAlwaysAuth true
+        yarn config set npmScopes.fortawesome.npmAuthToken ${NPM_TOKEN}
       env: 
         NPM_TOKEN: ${{ inputs.FONT_AWESOME_TOKEN }}
 
