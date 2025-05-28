@@ -69,8 +69,15 @@ runs:
       run: |
         yarn_version=$(yarn --version)
         yarn_major=$(echo "$yarn_version" | cut -d. -f1)
+
         echo "Detected yarn version: $yarn_version"
         echo "version=$yarn_major" >> $GITHUB_OUTPUT
+
+        if jq -e '.workspaces' package.json >/dev/null 2>&1; then
+          echo "workspaces=true" >> $GITHUB_OUTPUT
+        else
+          echo "workspaces=false" >> $GITHUB_OUTPUT
+        fi
 
     - shell: bash
       id: branch
@@ -160,22 +167,35 @@ runs:
         fi
 
     - shell: bash
-      name: install
+      if: steps.yarn.outputs.version == '1'
+      name: install, build and test using yarn 1
       run: |
         yarn install --frozen-lockfile
-
-    - shell: bash
-      name: build
-      run: |
         yarn run build
-
-    - shell: bash
-      name: tests
-      run: |
         yarn test
 
     - shell: bash
-      name: clean up
-      if: inputs.PRUNE_PRODUCTION == 'true'
+      if: steps.yarn.outputs.version == '4'
+      name: install, build and test using yarn 4
+      run: |
+        yarn --immutable
+        yarn run build
+        yarn test
+
+    - shell: bash
+      name: clean up using yarn 1
+      if: inputs.PRUNE_PRODUCTION == 'true' && steps.yarn.outputs.version == '1'
       run: |
         yarn install --production
+
+    - shell: bash
+      name: clean up using yarn 4
+      if: inputs.PRUNE_PRODUCTION == 'true' && steps.yarn.outputs.workspaces == 'false' && steps.yarn.outputs.version == '4'
+      run: |
+        yarn --production --immutable
+
+    - shell: bash
+      name: clean up using yarn 4 (workspaces)
+      if: inputs.PRUNE_PRODUCTION == 'true' && steps.yarn.outputs.workspaces == 'true' && steps.yarn.outputs.version == '4'
+      run: |
+        yarn workspaces focus --production
