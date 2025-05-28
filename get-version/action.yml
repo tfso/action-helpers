@@ -74,7 +74,7 @@ runs:
   steps:
     - uses: actions/setup-node@v4
       with:
-        node-version: 16
+        node-version: 22
 
     - shell: bash
       run: |
@@ -105,7 +105,7 @@ runs:
       
         if [[ -n "${taglist/[ ]*\n/}" ]]; then
           semver_tag=$(semver $taglist | tail -n 1)
-          tag=$(echo $taglist | sed 's/\s/\n/g' | grep $semver_tag)
+          tag=$(echo $taglist | sed 's/\s/\n/g' | grep "v$semver_tag")
         fi
 
         pre_taglist=$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^$major\.[0-9]+\.[0-9]+(-$prerelease\.[0-9]+)$" || echo "" | xargs)

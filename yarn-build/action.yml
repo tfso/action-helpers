@@ -24,9 +24,9 @@ inputs:
     description: Set a custom tag, useful when generating tag based on f.ex FROM image in a docker image. Setting this tag will invalidate any other settings set!
     required: false
   NODE_VERSION: 
-    description: node version, defaults to 18
+    description: node version, defaults to 22
     required: false
-    default: '18'
+    default: '22'
   PRUNE_PRODUCTION:
     description: prune for production
     required: false
@@ -64,6 +64,22 @@ runs:
         cache: 'yarn'
 
     - shell: bash
+      id: yarn
+      name: detect yarn project
+      run: |
+        yarn_version=$(yarn --version)
+        yarn_major=$(echo "$yarn_version" | cut -d. -f1)
+
+        echo "Detected yarn version: $yarn_version"
+        echo "version=$yarn_major" >> $GITHUB_OUTPUT
+
+        if jq -e '.workspaces' package.json >/dev/null 2>&1; then
+          echo "workspaces=true" >> $GITHUB_OUTPUT
+        else
+          echo "workspaces=false" >> $GITHUB_OUTPUT
+        fi
+
+    - shell: bash
       id: branch
       if: github.ref != format('refs/heads/{0}', github.event.repository.default_branch)
       name: gather branch information
@@ -96,6 +112,10 @@ runs:
       run: |
         npm config set @tfso:registry=https://npm.pkg.github.com --userconfig .npmrc
         npm config set //npm.pkg.github.com/:_authToken=${NPM_TOKEN} --userconfig .npmrc
+
+        yarn config set npmScopes.tfso.npmRegistryServer "https://npm.pkg.github.com"
+        yarn config set npmScopes.tfso.npmAlwaysAuth true
+        yarn config set npmScopes.tfso.npmAuthToken ${NPM_TOKEN}
       env:
         NPM_TOKEN: ${{ inputs.NPM_TOKEN }}
 
@@ -105,6 +125,10 @@ runs:
       run: |
         npm config set @fortawesome:registry=https://npm.fontawesome.com/ --userconfig .npmrc
         npm config set //npm.fontawesome.com/:_authToken=${NPM_TOKEN} --userconfig .npmrc
+
+        yarn config set npmScopes.fortawesome.npmRegistryServer "https://npm.fontawesome.com"
+        yarn config set npmScopes.fortawesome.npmAlwaysAuth true
+        yarn config set npmScopes.fortawesome.npmAuthToken ${NPM_TOKEN}
       env: 
         NPM_TOKEN: ${{ inputs.FONT_AWESOME_TOKEN }}
 
@@ -131,9 +155,16 @@ runs:
         CUSTOM_TAG: ${{ inputs.CUSTOM_TAG }}
 
     - shell: bash
-      name: version package
+      name: version package using yarn 1
+      if: steps.yarn.outputs.version == '1'
       run: |
         yarn version --new-version ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }} --no-git-tag-version --no-commit-hooks
+
+    - shell: bash
+      name: version package using yarn 4
+      if: steps.yarn.outputs.version == '4'
+      run: |
+        yarn version ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }}
 
     - shell: bash
       name: version workspaces
@@ -144,22 +175,35 @@ runs:
         fi
 
     - shell: bash
-      name: install
+      if: steps.yarn.outputs.version == '1'
+      name: install, build and test using yarn 1
       run: |
         yarn install --frozen-lockfile
-
-    - shell: bash
-      name: build
-      run: |
         yarn run build
-
-    - shell: bash
-      name: tests
-      run: |
         yarn test
 
     - shell: bash
-      name: clean up
-      if: inputs.PRUNE_PRODUCTION == 'true'
+      if: steps.yarn.outputs.version == '4'
+      name: install, build and test using yarn 4
+      run: |
+        yarn --immutable
+        yarn run build
+        yarn test
+
+    - shell: bash
+      name: clean up using yarn 1
+      if: inputs.PRUNE_PRODUCTION == 'true' && steps.yarn.outputs.version == '1'
       run: |
         yarn install --production
+
+    - shell: bash
+      name: clean up using yarn 4
+      if: inputs.PRUNE_PRODUCTION == 'true' && steps.yarn.outputs.workspaces == 'false' && steps.yarn.outputs.version == '4'
+      run: |
+        yarn --production --immutable
+
+    - shell: bash
+      name: clean up using yarn 4 (workspaces)
+      if: inputs.PRUNE_PRODUCTION == 'true' && steps.yarn.outputs.workspaces == 'true' && steps.yarn.outputs.version == '4'
+      run: |
+        yarn workspaces focus --production
