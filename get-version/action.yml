@@ -103,14 +103,10 @@ runs:
       run: |
         taglist=$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^$major\.[0-9]+\.[0-9]+$" || echo "" | xargs)
       
-        echo "taglist: $taglist"
-
         if [[ -n "${taglist/[ ]*\n/}" ]]; then
           semver_tag=$(semver $taglist | tail -n 1)
           tag=$(echo $taglist | sed 's/\s/\n/g' | grep "v$semver_tag")
         fi
-
-        echo "semver_tag: $semver_tag"
 
         pre_taglist=$(git for-each-ref --sort=-v:refname --format '%(refname:lstrip=2)' | grep -E "^$major\.[0-9]+\.[0-9]+(-$prerelease\.[0-9]+)$" || echo "" | xargs)
         
@@ -119,16 +115,8 @@ runs:
           pre_tag=$(echo $pre_taglist | sed 's/\s/\n/g' | grep $semver_pre_tag)
         fi
 
-        output_tag=$(echo "$tag" | sed 's/\n//g')
-        output_pre_tag=$(echo "$pre_tag" | sed 's/\n//g')
-
-        echo "tag before: $tag"
-        echo "tag after: $output_tag"
-        echo "pre_tag before: $pre_tag"
-        echo "pre_tag after: $output_pre_tag"
-
-        echo "tag=$output_tag" >> $GITHUB_OUTPUT
-        echo "pre_tag=$output_pre_tag" >> $GITHUB_OUTPUT
+        echo "tag=$tag" >> $GITHUB_OUTPUT
+        echo "pre_tag=$pre_tag" >> $GITHUB_OUTPUT
       env:
         prerelease: ${{ steps.branch.outputs.prerelease }}
         initial_version: ${{ inputs.MAJOR && format('{0}.0.0', inputs.MAJOR) || inputs.INITIAL_VERSION }}
