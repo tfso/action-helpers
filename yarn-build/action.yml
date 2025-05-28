@@ -65,7 +65,7 @@ runs:
 
     - shell: bash
       id: yarn
-      name: detect yarn major version
+      name: detect yarn project
       run: |
         yarn_version=$(yarn --version)
         yarn_major=$(echo "$yarn_version" | cut -d. -f1)
@@ -162,7 +162,7 @@ runs:
 
     - shell: bash
       name: version package using yarn 4
-      if: steps.yarn.outputs.version == '1'
+      if: steps.yarn.outputs.version == '4'
       run: |
         yarn version ${{ steps.semver.outputs.new_tag || steps.custom.outputs.new_tag }}
 
