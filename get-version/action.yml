@@ -74,7 +74,7 @@ runs:
   steps:
     - uses: actions/setup-node@v4
       with:
-        node-version: 16
+        node-version: ${{ inputs.NODE_VERSION }}
 
     - shell: bash
       run: |
