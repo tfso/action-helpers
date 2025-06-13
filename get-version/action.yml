@@ -35,6 +35,10 @@ inputs:
     description: Default main branch, other than this branch will be treated as a prerelease
     required: false
     default: ${{ github.event.repository.default_branch }}
+  NODE_VERSION: 
+    description: node version, defaults to 18
+    required: false
+    default: '18'
   
 
 outputs:
@@ -74,7 +78,7 @@ runs:
   steps:
     - uses: actions/setup-node@v4
       with:
-        node-version: 16
+        node-version: ${{ inputs.NODE_VERSION }}
 
     - shell: bash
       run: |
