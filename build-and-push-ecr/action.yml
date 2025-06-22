@@ -35,6 +35,10 @@ inputs:
   tag:
     description: "Tag for the Docker image"
     required: true
+  secrets:
+    description: "List of secrets to expose to the build (e.g., key=string, NPM_TOKEN=mytoken)"
+    required: false
+
 outputs:
   image_uri:
     description: 'The full image name that was pushed'
@@ -92,8 +96,9 @@ runs:
         registries: "${{ inputs.ecr_account_id }}"
 
     - name: Build and Push Docker Image
-      uses: docker/build-push-action@v4
+      uses: docker/build-push-action@v5
       with:
+        secrets: ${{ inputs.secrets }}
         context: ${{ inputs.context }}
         file: ${{ inputs.file }}
         push: ${{ inputs.push }}
